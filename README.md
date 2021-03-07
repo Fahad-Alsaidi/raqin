@@ -43,3 +43,7 @@
 
 الصورة التالية توضح سير هذه المراحل:
 ![مراحل النظام](assets/system-flowchart.png)
+الصور التالية من مشروع [pgdp](https://www.pgdp.net) الذي يعتمد نفس الفكرة
+
+![عملية التدقيق](assets/pgdp5.jpg)
+![عملية التدقيق](assets/pgdp-screenshot.png)
