@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 
@@ -28,7 +29,7 @@ func main() {
 	contours := gocv.FindContours(dilatedImage, gocv.RetrievalExternal, gocv.ContourApproximationMode(1))
 
 	// for each contour found, draw a rectangle around it on original image
-	for _, contour := range contours {
+	for i, contour := range contours {
 
 		// get rectangle bounding contour
 		imageRect := gocv.BoundingRect(contour)
@@ -45,6 +46,9 @@ func main() {
 
 		// draw rectangle around contour on original image
 		gocv.Rectangle(&srcImage, imageRect, color.RGBA{}, 1)
+
+		// save individual contour as image
+		gocv.IMWrite(fmt.Sprintf("%d.jpg", i), srcImage.Region(imageRect))
 
 	}
 	gocv.IMWrite("output.jpg", srcImage)
