@@ -1,97 +1,135 @@
 <template>
   <q-page class="flex flex-center">
     <div class="q-pa-md row items-start q-gutter-md" style="direction: rtl;">
-    <q-card class="my-card" flat bordered>
+
+    <q-card class="my-card q-gutter-col-md" flat bordered>
       <q-card-section>
-        <q-input dense v-model="text">
+
+        <div class="text-h5 q-mt-sm q-mb-md"> ارفع كتابا جديدا للرقن </div>
+
+        <q-file
+          v-model="files"
+          label="ارفع كتاب"
+          square
+          flat
+          counter
+          outlined
+          use-chips
+          
+          clearable
+          accept=".csv,.txt,.xls,.xlsx,.doc,.docx,.pdf,.dbf,.zip,.rar,.7z,.jpg,.png,.gif"
+          max-files="1"
+          max-file-size="5120000"
+          @rejected="onRejected"
+        >
           <template v-slot:prepend>
-            <div class="text-overline text-orange-9">{{ question }}</div>
+            <q-icon name="attach_file" />
+          </template>
+        </q-file>
+        
+        <q-input outlined v-model="book" class="q-my-sm">
+          <template v-slot:prepend>
+            <div class="text-overline text-orange-9 q-ml-md">إسم الكتاب</div>
           </template>
         </q-input>
-        <div class="text-h5 q-mt-sm q-mb-xs">{{ book }}</div>
-        <div class="text-caption text-grey">
-          {{ desription }}
-        </div>
+
+        <q-input outlined v-model="author" class="q-my-sm">
+          <template v-slot:prepend>
+            <div class="text-overline text-orange-9 q-ml-md">إسم المؤلف</div>
+          </template>
+        </q-input>
+
       </q-card-section>
 
       <q-card-actions>
-        <q-btn flat color="dark" :label="change" @click="changePic()" />
-        <q-btn flat color="primary" :label="solve" @click="SendResponse()" />
-
-        <q-space />
-
-        <q-btn
-          color="grey"
-          round
-          flat
-          dense
-          :icon="expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
-          @click="expanded = !expanded"
-        />
+        <q-btn flat color="primary" label="رفع الكتاب" />
       </q-card-actions>
 
-      <q-slide-transition>
-        <div v-show="expanded">
-          <q-separator />
-          <q-card-section class="text-subitle2">
-            {{ lorem }}
-          </q-card-section>
-        </div>
-      </q-slide-transition>
     </q-card>
+
   </div>
   </q-page>
 </template>
 
 <script>
-import axios from "axios";
+
 export default {
   name: "project",
   data() {
     return {
-      imgIndex: 0,
-      text: "",
-      expanded: false,
-      question: "هل تستطيع حلها ؟",
-      book: "من كتاب أنت أقوى",
-      desription: "هذه الصورة من كتاب أنت أقوى من الصفحة 94, فهل تستطيع حلها ؟",
-      solve: "حل",
-      change: "تغيير الصورة",
-      lorem:
-        "تستخدم ترجمات هذه النصوص في بناء كتب يستطيع القارئ العربي الإستفادة منها وقرائتها بكل حرية."
+      files: null,
+      book: null,
+      author: null
     };
   },
-  computed: {
-    imgPath() {
-      return "img/" + this.imgIndex + ".jpg";
-    }
-  },
   methods: {
-    changePic() {
-      if (this.imgIndex < 24) {
-        this.imgIndex = this.imgIndex + 1;
-        return;
-      } else {
-        return (this.imgIndex = 0);
+    onSubmit (evt) {
+      this.loading = true // add loading state to submit button
+      const formData = new FormData()
+
+      if (this.files && this.files.length > 0) {
+        for (let i = 0; i < this.files.length; i++) {
+          formData.append('files[' + i + ']', this.files[i])
+        }
       }
-    },
-    SendResponse() {
-      axios
-        .post(
-          "localhost:1323/client/profile",
-          { answer: this.text },
-          {
-            headers: {
-              "Access-Control-Allow-Origin": "*"
-            }
+      for (const [key, value] of Object.entries(this.form)) {
+        formData.append(key, value)
+      }
+
+      this.$axios.get('/sanctum/csrf-cookie').then(response => {
+        this.$axios({
+          method: 'post',
+          url: '/api/request',
+          data: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data'
           }
-        )
-        .then(res => {
-          console.log(res);
         })
-        .catch(err => {
-          console.log(err);
-        });
+          .then((response) => {
+            this.loading = false
+
+            this.$q.notify({
+              color: 'positive',
+              position: 'top',
+              message: 'Request sent! We\'ll contact you soon.',
+              icon: 'done'
+            })
+          })
+          .catch(() => {
+            this.loading = false
+
+            this.$q.notify({
+              color: 'negative',
+              position: 'top',
+              message: 'An error occurred',
+              icon: 'report_problem'
+            })
+          })
+      })
+    },
+              
+    onRejected (entries) {
+      if (entries.length > 0) {
+        switch (entries[0].failedPropValidation) {
+          case 'max-file-size':
+            this.$q.notify({
+              position: 'top',
+              type: 'negative',
+              message: 'File exceeds 5MB.'
+            })
+
+            break
+
+          case 'max-files':
+            this.$q.notify({
+              position: 'top',
+              type: 'negative',
+              message: 'You can upload up to 10 files.'
+            })
+
+            break
+        }
+      }
     }
   }
 };
@@ -100,5 +138,6 @@ export default {
 <style lang="sass" scoped>
 .my-card
   width: 100%
+  width: 500px
   max-width: 650px
 </style>
