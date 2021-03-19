@@ -8,7 +8,7 @@
         <div class="text-h5 q-mt-sm q-mb-md"> ارفع كتابا جديدا للرقن </div>
 
         <q-file
-          v-model="files"
+          v-model="file"
           label="ارفع كتاب"
           square
           flat
@@ -42,7 +42,7 @@
       </q-card-section>
 
       <q-card-actions>
-        <q-btn flat color="primary" label="رفع الكتاب" />
+        <q-btn flat color="primary" label="رفع الكتاب" @click="onSubmit" />
       </q-card-actions>
 
     </q-card>
@@ -57,7 +57,7 @@ export default {
   name: "project",
   data() {
     return {
-      files: null,
+      file: null,
       book: null,
       author: null
     };
@@ -66,20 +66,13 @@ export default {
     onSubmit (evt) {
       this.loading = true // add loading state to submit button
       const formData = new FormData()
+      formData.append("name", book)
+      formData.append("author", author)
+      formData.append("file", this.file)
 
-      if (this.files && this.files.length > 0) {
-        for (let i = 0; i < this.files.length; i++) {
-          formData.append('files[' + i + ']', this.files[i])
-        }
-      }
-      for (const [key, value] of Object.entries(this.form)) {
-        formData.append(key, value)
-      }
-
-      this.$axios.get('/sanctum/csrf-cookie').then(response => {
-        this.$axios({
+      this.$axios({
           method: 'post',
-          url: '/api/request',
+          url: '/admin/upload',
           data: formData,
           headers: {
             'Content-Type': 'multipart/form-data'
@@ -105,7 +98,6 @@ export default {
               icon: 'report_problem'
             })
           })
-      })
     },
               
     onRejected (entries) {
@@ -124,7 +116,7 @@ export default {
             this.$q.notify({
               position: 'top',
               type: 'negative',
-              message: 'You can upload up to 10 files.'
+              message: 'You can upload only 1 file.'
             })
 
             break
