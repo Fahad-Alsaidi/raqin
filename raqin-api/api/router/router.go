@@ -8,6 +8,9 @@
 package router
 
 import (
+	"raqin-api/api/router/adminrouter"
+	"raqin-api/api/router/clientrouter"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -15,16 +18,10 @@ import (
 // الدالة التي تقوم بتسجيل وتعريف الوجهات
 func InitRouter(e *echo.Echo) {
 
-	// this group will have all client routes
 	// عرف وجهة المستخدم العادي هنا ثم اضف مايندرج تحته في ملفه الخاص كالمثال الموجود
-	// انظر الى ملف client_routes.go
-	clientRouter := e.Group("/client")
-	InitClientRouter(clientRouter)
+	clientrouter.Init(e.Group("/client"))
 
-	// this group will have all client routes
 	// عرف وجهة المستخدم المتحكم هنا ثم اضف مايندرج تحته في ملفه الخاص كالمثال الموجود
-	// انظر الى ملف admin_routes.go
-	adminRouter := e.Group("/admin")
-	InitAdminRouter(adminRouter)
+	adminrouter.Init(e.Group("/admin"))
 
 }
