@@ -17,7 +17,7 @@
           use-chips
           
           clearable
-          accept=".csv,.txt,.xls,.xlsx,.doc,.docx,.pdf,.dbf,.zip,.rar,.7z,.jpg,.png,.gif"
+          accept=".pdf"
           max-files="1"
           max-file-size="5120000"
           @rejected="onRejected"
