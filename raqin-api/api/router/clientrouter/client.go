@@ -1,4 +1,4 @@
-package router
+package clientrouter
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 // InitClientRouter will register all client routes
 // هنا نعرف وجهات المستخدم العادي كالمثال الموجود
-func InitClientRouter(clientRouter *echo.Group) {
+func Init(clientRouter *echo.Group) {
 
 	// profile route وجهة الصفحة الشخصية للمستخدم العادي
 	clientRouter.POST("/profile", func(c echo.Context) error {
