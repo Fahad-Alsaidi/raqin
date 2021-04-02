@@ -43,6 +43,9 @@
           <q-td key="author" :props="props">
               {{ props.row.author }}
           </q-td>
+          <q-td key="completion" :props="props">
+              {{ props.row.completion }}
+          </q-td>
         </q-tr>
       </template>
     </q-table>
@@ -68,6 +71,7 @@ export default {
             { name: 'book', label: 'اسم الكتاب', field: 'book' },
             { name: 'category', label: 'تصنيف الكتاب', field: 'category' },
             { name: 'author', label: 'تأليف', field: 'author' },
+            { name: 'completion', label: 'نسبة اﻹنجاز', field: 'completion' },
           ],
            data: [
         {
@@ -77,6 +81,7 @@ export default {
           book: 'ارقن معنا',
           category: 'ادب',
           author: 'ابو ليلى',
+          completion: '20%',
         },
            ]
         }
