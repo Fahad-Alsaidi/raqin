@@ -101,7 +101,7 @@ export default {
       a_menu: [
         { name: "الرئيسية", icon: "home", to: "home" },
         { name: "المشاريع", icon: "volunteer_activism", to: "project" },
-        { name: "المساهمة", icon: "military_tech", to: "contribute" },
+        { name: "المساهمات", icon: "military_tech", to: "contribution" },
         { name: "التفضيلات", icon: "settings_suggest", to: "preferences" },
         { name: "الملف الشخصي", icon: "account_circle", to: "profile" }
       ]
