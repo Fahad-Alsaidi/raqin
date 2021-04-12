@@ -6,7 +6,7 @@ const routes = [
     children: [
       { path: 'home', component: () => import('pages/Index.vue') },
       { path: 'project', component: () => import('pages/project.vue') },
-      { path: 'contribute', component: () => import('pages/contribute.vue') },
+      { path: 'contribution', component: () => import('pages/contribution.vue') },
       { path: 'profile', component: () => import('pages/profile.vue') },
       { path: 'preferences', component: () => import('pages/preferences.vue') }
     ]

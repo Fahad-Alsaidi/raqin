@@ -60,7 +60,7 @@
         dense
         round
         unelevated
-        color="accent"
+        color="primary"
         icon="chevron_right"
         @click="miniState = true"
       />
@@ -68,7 +68,13 @@
   </q-drawer>
 
     <q-page-container>
+      <q-page padding>
       <router-view />
+          <!-- place QPageScroller at end of page -->
+          <q-page-scroller position="bottom-right" :scroll-offset="150" :offset="[18, 18]">
+            <q-btn fab icon="keyboard_arrow_up" color="accent" />
+          </q-page-scroller>
+      </q-page>
     </q-page-container>
   </q-layout>
 </template>
@@ -94,8 +100,8 @@ export default {
       ],
       a_menu: [
         { name: "الرئيسية", icon: "home", to: "home" },
-        { name: "بدء مشروع", icon: "volunteer_activism", to: "project" },
-        { name: "المساهمة", icon: "military_tech", to: "contribute" },
+        { name: "المشاريع", icon: "volunteer_activism", to: "project" },
+        { name: "المساهمات", icon: "military_tech", to: "contribution" },
         { name: "التفضيلات", icon: "settings_suggest", to: "preferences" },
         { name: "الملف الشخصي", icon: "account_circle", to: "profile" }
       ]

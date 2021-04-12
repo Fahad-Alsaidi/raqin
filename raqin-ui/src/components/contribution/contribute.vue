@@ -1,6 +1,5 @@
 <template>
-  <q-page class="flex flex-center">
-    <div class="q-pa-md row items-start q-gutter-md" style="direction: rtl;">
+  <div class="q-pa-md row items-start q-gutter-md" style="direction: rtl;">
     <q-card class="my-card" flat bordered>
       <viewer :img="[imgPath]" />
       <q-card-section>
@@ -41,7 +40,6 @@
       </q-slide-transition>
     </q-card>
   </div>
-  </q-page>
 </template>
 
 <script>
