@@ -1,7 +1,7 @@
 package adminrouter
 
 import (
-	book "raqin-api/core/app/book"
+	"raqin-api/app/book"
 
 	"github.com/labstack/echo/v4"
 )
