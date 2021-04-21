@@ -7,18 +7,18 @@ import (
 )
 
 // book struct that will implement IBook interface
-type Controller struct {
-	bookservice IBook
+type bookController struct {
+	bookservice BookService
 }
 
 // NewBookController return bookController struct with IBook service
 // this method is the entry to this controller
-func NewBookController(bookservice IBook) Controller {
-	return Controller{bookservice: bookservice}
+func NewBookController(bookservice BookService) *bookController {
+	return &bookController{bookservice: bookservice}
 }
 
 // NewBook returns the new created book
-func (b Controller) UploadNewBook(c echo.Context) error {
+func (b *bookController) UploadNewBook(c echo.Context) error {
 
 	book := NewBookRequest{}
 	// Source
@@ -37,7 +37,7 @@ func (b Controller) UploadNewBook(c echo.Context) error {
 		panic(err)
 	}
 
-	b.bookservice.UploadNewBook(book)
+	b.bookservice.NewBookProject(book)
 
 	return c.String(http.StatusOK, "book has been uploaded")
 

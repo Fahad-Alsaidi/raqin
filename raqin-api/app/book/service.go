@@ -1,42 +1,55 @@
 package book
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"image/jpeg"
-	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"raqin-api/storage/repo"
 	"time"
 
 	"github.com/gen2brain/go-fitz"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
-// book interface the will hold all book related operations
-type IBook interface {
-	UploadNewBook(in NewBookRequest) // registers new book
+type BookService interface {
+	NewBookProject(in NewBookRequest)
 }
 
-// book struct that will implement IBook interface
-type bookService struct{}
-
-// NewBookController return bookController struct with IBook service
-// this method is the entry to this controller
-func NewBookService() bookService {
-	return bookService{}
+type bookService struct {
+	db *sql.DB
 }
 
-func (bs bookService) UploadNewBook(in NewBookRequest) {
+func NewBookService(db *sql.DB) *bookService {
+	return &bookService{db}
+}
 
-	// Destination
-	dst, err := os.Create(time.Now().String())
+func (bs *bookService) NewBookProject(in NewBookRequest) {
+
+	defer in.File.Close()
+	fileBytes, err := ioutil.ReadAll(in.File)
 	if err != nil {
 		panic(err)
 	}
-	defer dst.Close()
-	defer in.File.Close()
 
-	// Copy
-	if _, err = io.Copy(dst, in.File); err != nil {
+	fileName := fmt.Sprintf("%d.pdf", time.Now().Unix())
+	err = ioutil.WriteFile(fileName, fileBytes, 0755)
+	if err != nil {
+		panic(err)
+	}
+
+	book := &repo.Book{
+		Name: "some book",
+		Note: null.StringFrom("i dont know"),
+		Path: fileName,
+	}
+
+	book.Insert(context.Background(), bs.db, boil.Infer())
+	if err != nil {
 		panic(err)
 	}
 
