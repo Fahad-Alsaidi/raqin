@@ -494,57 +494,6 @@ func testPageRevisionsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testPageRevisionToOnePageUsingPage(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local PageRevision
-	var foreign Page
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, pageRevisionDBTypes, false, pageRevisionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PageRevision struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, pageDBTypes, false, pageColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Page struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.PageID = foreign.ID
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Page().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := PageRevisionSlice{&local}
-	if err = local.L.LoadPage(ctx, tx, false, (*[]*PageRevision)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Page == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Page = nil
-	if err = local.L.LoadPage(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Page == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testPageRevisionToOneUserUsingReviewer(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -596,63 +545,57 @@ func testPageRevisionToOneUserUsingReviewer(t *testing.T) {
 	}
 }
 
-func testPageRevisionToOneSetOpPageUsingPage(t *testing.T) {
-	var err error
-
+func testPageRevisionToOnePageUsingPage(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a PageRevision
-	var b, c Page
+	var local PageRevision
+	var foreign Page
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &local, pageRevisionDBTypes, false, pageRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize PageRevision struct: %s", err)
 	}
-	if err = randomize.Struct(seed, &b, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &foreign, pageDBTypes, false, pageColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Page struct: %s", err)
 	}
 
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*Page{&b, &c} {
-		err = a.SetPage(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
+	local.PageID = foreign.ID
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
 
-		if a.R.Page != x {
-			t.Error("relationship struct not set to correct value")
-		}
+	check, err := local.Page().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if x.R.PageRevisions[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.PageID != x.ID {
-			t.Error("foreign key was wrong value", a.PageID)
-		}
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
 
-		zero := reflect.Zero(reflect.TypeOf(a.PageID))
-		reflect.Indirect(reflect.ValueOf(&a.PageID)).Set(zero)
+	slice := PageRevisionSlice{&local}
+	if err = local.L.LoadPage(ctx, tx, false, (*[]*PageRevision)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Page == nil {
+		t.Error("struct should have been eager loaded")
+	}
 
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.PageID != x.ID {
-			t.Error("foreign key was wrong value", a.PageID, x.ID)
-		}
+	local.R.Page = nil
+	if err = local.L.LoadPage(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Page == nil {
+		t.Error("struct should have been eager loaded")
 	}
 }
+
 func testPageRevisionToOneSetOpUserUsingReviewer(t *testing.T) {
 	var err error
 
@@ -707,6 +650,63 @@ func testPageRevisionToOneSetOpUserUsingReviewer(t *testing.T) {
 
 		if a.ReviewerID != x.ID {
 			t.Error("foreign key was wrong value", a.ReviewerID, x.ID)
+		}
+	}
+}
+func testPageRevisionToOneSetOpPageUsingPage(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c Page
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Page{&b, &c} {
+		err = a.SetPage(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Page != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.PageRevisions[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.PageID != x.ID {
+			t.Error("foreign key was wrong value", a.PageID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.PageID))
+		reflect.Indirect(reflect.ValueOf(&a.PageID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.PageID != x.ID {
+			t.Error("foreign key was wrong value", a.PageID, x.ID)
 		}
 	}
 }
@@ -785,7 +785,7 @@ func testPageRevisionsSelect(t *testing.T) {
 }
 
 var (
-	pageRevisionDBTypes = map[string]string{`ID`: `integer`, `ReviewerID`: `integer`, `PageID`: `integer`, `PageText`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`}
+	pageRevisionDBTypes = map[string]string{`ID`: `int`, `ReviewerID`: `int`, `PageID`: `int`, `PageText`: `text`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_                   = bytes.MinRead
 )
 
@@ -906,19 +906,22 @@ func testPageRevisionsUpsert(t *testing.T) {
 	if len(pageRevisionAllColumns) == len(pageRevisionPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
+	if len(mySQLPageRevisionUniqueColumns) == 0 {
+		t.Skip("Skipping table with no unique columns to conflict on")
+	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
 	o := PageRevision{}
-	if err = randomize.Struct(seed, &o, pageRevisionDBTypes, true); err != nil {
+	if err = randomize.Struct(seed, &o, pageRevisionDBTypes, false); err != nil {
 		t.Errorf("Unable to randomize PageRevision struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert PageRevision: %s", err)
 	}
 
@@ -935,7 +938,7 @@ func testPageRevisionsUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize PageRevision struct: %s", err)
 	}
 
-	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert PageRevision: %s", err)
 	}
 

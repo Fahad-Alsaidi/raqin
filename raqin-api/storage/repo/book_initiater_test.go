@@ -494,57 +494,6 @@ func testBookInitiatersInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testBookInitiaterToOneBookUsingBook(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local BookInitiater
-	var foreign Book
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, bookInitiaterDBTypes, false, bookInitiaterColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize BookInitiater struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, bookDBTypes, false, bookColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Book struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.BookID = foreign.ID
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Book().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := BookInitiaterSlice{&local}
-	if err = local.L.LoadBook(ctx, tx, false, (*[]*BookInitiater)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Book == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Book = nil
-	if err = local.L.LoadBook(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Book == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testBookInitiaterToOneUserUsingUser(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -596,63 +545,57 @@ func testBookInitiaterToOneUserUsingUser(t *testing.T) {
 	}
 }
 
-func testBookInitiaterToOneSetOpBookUsingBook(t *testing.T) {
-	var err error
-
+func testBookInitiaterToOneBookUsingBook(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a BookInitiater
-	var b, c Book
+	var local BookInitiater
+	var foreign Book
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, bookInitiaterDBTypes, false, strmangle.SetComplement(bookInitiaterPrimaryKeyColumns, bookInitiaterColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &local, bookInitiaterDBTypes, false, bookInitiaterColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize BookInitiater struct: %s", err)
 	}
-	if err = randomize.Struct(seed, &b, bookDBTypes, false, strmangle.SetComplement(bookPrimaryKeyColumns, bookColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, bookDBTypes, false, strmangle.SetComplement(bookPrimaryKeyColumns, bookColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &foreign, bookDBTypes, false, bookColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Book struct: %s", err)
 	}
 
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*Book{&b, &c} {
-		err = a.SetBook(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
+	local.BookID = foreign.ID
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
 
-		if a.R.Book != x {
-			t.Error("relationship struct not set to correct value")
-		}
+	check, err := local.Book().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if x.R.BookInitiaters[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.BookID != x.ID {
-			t.Error("foreign key was wrong value", a.BookID)
-		}
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
 
-		zero := reflect.Zero(reflect.TypeOf(a.BookID))
-		reflect.Indirect(reflect.ValueOf(&a.BookID)).Set(zero)
+	slice := BookInitiaterSlice{&local}
+	if err = local.L.LoadBook(ctx, tx, false, (*[]*BookInitiater)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Book == nil {
+		t.Error("struct should have been eager loaded")
+	}
 
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.BookID != x.ID {
-			t.Error("foreign key was wrong value", a.BookID, x.ID)
-		}
+	local.R.Book = nil
+	if err = local.L.LoadBook(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Book == nil {
+		t.Error("struct should have been eager loaded")
 	}
 }
+
 func testBookInitiaterToOneSetOpUserUsingUser(t *testing.T) {
 	var err error
 
@@ -707,6 +650,63 @@ func testBookInitiaterToOneSetOpUserUsingUser(t *testing.T) {
 
 		if a.UserID != x.ID {
 			t.Error("foreign key was wrong value", a.UserID, x.ID)
+		}
+	}
+}
+func testBookInitiaterToOneSetOpBookUsingBook(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a BookInitiater
+	var b, c Book
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, bookInitiaterDBTypes, false, strmangle.SetComplement(bookInitiaterPrimaryKeyColumns, bookInitiaterColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, bookDBTypes, false, strmangle.SetComplement(bookPrimaryKeyColumns, bookColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, bookDBTypes, false, strmangle.SetComplement(bookPrimaryKeyColumns, bookColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Book{&b, &c} {
+		err = a.SetBook(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Book != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.BookInitiaters[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.BookID != x.ID {
+			t.Error("foreign key was wrong value", a.BookID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.BookID))
+		reflect.Indirect(reflect.ValueOf(&a.BookID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.BookID != x.ID {
+			t.Error("foreign key was wrong value", a.BookID, x.ID)
 		}
 	}
 }
@@ -785,7 +785,7 @@ func testBookInitiatersSelect(t *testing.T) {
 }
 
 var (
-	bookInitiaterDBTypes = map[string]string{`ID`: `integer`, `UserID`: `integer`, `BookID`: `integer`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`}
+	bookInitiaterDBTypes = map[string]string{`ID`: `int`, `UserID`: `int`, `BookID`: `int`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_                    = bytes.MinRead
 )
 
@@ -906,19 +906,22 @@ func testBookInitiatersUpsert(t *testing.T) {
 	if len(bookInitiaterAllColumns) == len(bookInitiaterPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
+	if len(mySQLBookInitiaterUniqueColumns) == 0 {
+		t.Skip("Skipping table with no unique columns to conflict on")
+	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
 	o := BookInitiater{}
-	if err = randomize.Struct(seed, &o, bookInitiaterDBTypes, true); err != nil {
+	if err = randomize.Struct(seed, &o, bookInitiaterDBTypes, false); err != nil {
 		t.Errorf("Unable to randomize BookInitiater struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert BookInitiater: %s", err)
 	}
 
@@ -935,7 +938,7 @@ func testBookInitiatersUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize BookInitiater struct: %s", err)
 	}
 
-	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert BookInitiater: %s", err)
 	}
 

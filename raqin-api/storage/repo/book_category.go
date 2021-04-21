@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -29,7 +28,7 @@ type BookCategory struct {
 	CategoryID int       `boil:"category_id" json:"category_id" toml:"category_id" yaml:"category_id"`
 	CreatedAt  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt  time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt  null.Time `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	DeletedAt  time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *bookCategoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L bookCategoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -59,14 +58,14 @@ var BookCategoryWhere = struct {
 	CategoryID whereHelperint
 	CreatedAt  whereHelpertime_Time
 	UpdatedAt  whereHelpertime_Time
-	DeletedAt  whereHelpernull_Time
+	DeletedAt  whereHelpertime_Time
 }{
-	ID:         whereHelperint{field: "\"book_category\".\"id\""},
-	BookID:     whereHelperint{field: "\"book_category\".\"book_id\""},
-	CategoryID: whereHelperint{field: "\"book_category\".\"category_id\""},
-	CreatedAt:  whereHelpertime_Time{field: "\"book_category\".\"created_at\""},
-	UpdatedAt:  whereHelpertime_Time{field: "\"book_category\".\"updated_at\""},
-	DeletedAt:  whereHelpernull_Time{field: "\"book_category\".\"deleted_at\""},
+	ID:         whereHelperint{field: "`book_category`.`id`"},
+	BookID:     whereHelperint{field: "`book_category`.`book_id`"},
+	CategoryID: whereHelperint{field: "`book_category`.`category_id`"},
+	CreatedAt:  whereHelpertime_Time{field: "`book_category`.`created_at`"},
+	UpdatedAt:  whereHelpertime_Time{field: "`book_category`.`updated_at`"},
+	DeletedAt:  whereHelpertime_Time{field: "`book_category`.`deleted_at`"},
 }
 
 // BookCategoryRels is where relationship names are stored.
@@ -94,8 +93,8 @@ type bookCategoryL struct{}
 
 var (
 	bookCategoryAllColumns            = []string{"id", "book_id", "category_id", "created_at", "updated_at", "deleted_at"}
-	bookCategoryColumnsWithoutDefault = []string{"book_id", "category_id", "deleted_at"}
-	bookCategoryColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	bookCategoryColumnsWithoutDefault = []string{"book_id", "category_id"}
+	bookCategoryColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
 	bookCategoryPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -377,13 +376,13 @@ func (q bookCategoryQuery) Exists(ctx context.Context, exec boil.ContextExecutor
 // Book pointed to by the foreign key.
 func (o *BookCategory) Book(mods ...qm.QueryMod) bookQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.BookID),
+		qm.Where("`id` = ?", o.BookID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
 	query := Books(queryMods...)
-	queries.SetFrom(query.Query, "\"book\"")
+	queries.SetFrom(query.Query, "`book`")
 
 	return query
 }
@@ -391,13 +390,13 @@ func (o *BookCategory) Book(mods ...qm.QueryMod) bookQuery {
 // Category pointed to by the foreign key.
 func (o *BookCategory) Category(mods ...qm.QueryMod) categoryQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.CategoryID),
+		qm.Where("`id` = ?", o.CategoryID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
 	query := Categories(queryMods...)
-	queries.SetFrom(query.Query, "\"category\"")
+	queries.SetFrom(query.Query, "`category`")
 
 	return query
 }
@@ -622,9 +621,9 @@ func (o *BookCategory) SetBook(ctx context.Context, exec boil.ContextExecutor, i
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"book_category\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"book_id"}),
-		strmangle.WhereClause("\"", "\"", 2, bookCategoryPrimaryKeyColumns),
+		"UPDATE `book_category` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"book_id"}),
+		strmangle.WhereClause("`", "`", 0, bookCategoryPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -669,9 +668,9 @@ func (o *BookCategory) SetCategory(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"book_category\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"category_id"}),
-		strmangle.WhereClause("\"", "\"", 2, bookCategoryPrimaryKeyColumns),
+		"UPDATE `book_category` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"category_id"}),
+		strmangle.WhereClause("`", "`", 0, bookCategoryPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -706,7 +705,7 @@ func (o *BookCategory) SetCategory(ctx context.Context, exec boil.ContextExecuto
 
 // BookCategories retrieves all the records using an executor.
 func BookCategories(mods ...qm.QueryMod) bookCategoryQuery {
-	mods = append(mods, qm.From("\"book_category\""))
+	mods = append(mods, qm.From("`book_category`"))
 	return bookCategoryQuery{NewQuery(mods...)}
 }
 
@@ -720,7 +719,7 @@ func FindBookCategory(ctx context.Context, exec boil.ContextExecutor, iD int, se
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"book_category\" where \"id\"=$1", sel,
+		"select %s from `book_category` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -783,15 +782,15 @@ func (o *BookCategory) Insert(ctx context.Context, exec boil.ContextExecutor, co
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"book_category\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `book_category` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"book_category\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO `book_category` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `book_category` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, bookCategoryPrimaryKeyColumns))
 		}
 
 		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
@@ -805,17 +804,44 @@ func (o *BookCategory) Insert(ctx context.Context, exec boil.ContextExecutor, co
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to insert into book_category")
 	}
 
+	var lastID int64
+	var identifierCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == bookCategoryMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	identifierCols = []interface{}{
+		o.ID,
+	}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, identifierCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for book_category")
+	}
+
+CacheNoHooks:
 	if !cached {
 		bookCategoryInsertCacheMut.Lock()
 		bookCategoryInsertCache[key] = cache
@@ -857,9 +883,9 @@ func (o *BookCategory) Update(ctx context.Context, exec boil.ContextExecutor, co
 			return 0, errors.New("repo: unable to update book_category, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"book_category\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, bookCategoryPrimaryKeyColumns),
+		cache.query = fmt.Sprintf("UPDATE `book_category` SET %s WHERE %s",
+			strmangle.SetParamNames("`", "`", 0, wl),
+			strmangle.WhereClause("`", "`", 0, bookCategoryPrimaryKeyColumns),
 		)
 		cache.valueMapping, err = queries.BindMapping(bookCategoryType, bookCategoryMapping, append(wl, bookCategoryPrimaryKeyColumns...))
 		if err != nil {
@@ -938,9 +964,9 @@ func (o BookCategorySlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"book_category\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, bookCategoryPrimaryKeyColumns, len(o)))
+	sql := fmt.Sprintf("UPDATE `book_category` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, colNames),
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, bookCategoryPrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -959,9 +985,13 @@ func (o BookCategorySlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 	return rowsAff, nil
 }
 
+var mySQLBookCategoryUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *BookCategory) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *BookCategory) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("repo: no book_category provided for upsert")
 	}
@@ -979,19 +1009,14 @@ func (o *BookCategory) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(bookCategoryColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLBookCategoryUniqueColumns, o)
+
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	if updateOnConflict {
-		buf.WriteByte('t')
-	} else {
-		buf.WriteByte('f')
-	}
-	buf.WriteByte('.')
-	for _, c := range conflictColumns {
-		buf.WriteString(c)
-	}
-	buf.WriteByte('.')
 	buf.WriteString(strconv.Itoa(updateColumns.Kind))
 	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
@@ -1003,6 +1028,10 @@ func (o *BookCategory) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -1026,16 +1055,17 @@ func (o *BookCategory) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 			bookCategoryPrimaryKeyColumns,
 		)
 
-		if updateOnConflict && len(update) == 0 {
+		if !updateColumns.IsNone() && len(update) == 0 {
 			return errors.New("repo: unable to upsert book_category, could not build update column list")
 		}
 
-		conflict := conflictColumns
-		if len(conflict) == 0 {
-			conflict = make([]string, len(bookCategoryPrimaryKeyColumns))
-			copy(conflict, bookCategoryPrimaryKeyColumns)
-		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"book_category\"", updateOnConflict, ret, update, conflict, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "`book_category`", update, insert)
+		cache.retQuery = fmt.Sprintf(
+			"SELECT %s FROM `book_category` WHERE %s",
+			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
+		)
 
 		cache.valueMapping, err = queries.BindMapping(bookCategoryType, bookCategoryMapping, insert)
 		if err != nil {
@@ -1061,18 +1091,47 @@ func (o *BookCategory) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
-		if err == sql.ErrNoRows {
-			err = nil // Postgres doesn't return anything when there's no update
-		}
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
+
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to upsert book_category")
+		return errors.Wrap(err, "repo: unable to upsert for book_category")
 	}
 
+	var lastID int64
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == bookCategoryMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	uniqueMap, err = queries.BindMapping(bookCategoryType, bookCategoryMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to retrieve unique values for book_category")
+	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, nzUniqueCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, nzUniqueCols...).Scan(returns...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for book_category")
+	}
+
+CacheNoHooks:
 	if !cached {
 		bookCategoryUpsertCacheMut.Lock()
 		bookCategoryUpsertCache[key] = cache
@@ -1094,7 +1153,7 @@ func (o *BookCategory) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), bookCategoryPrimaryKeyMapping)
-	sql := "DELETE FROM \"book_category\" WHERE \"id\"=$1"
+	sql := "DELETE FROM `book_category` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1159,8 +1218,8 @@ func (o BookCategorySlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"book_category\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, bookCategoryPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `book_category` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, bookCategoryPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1214,8 +1273,8 @@ func (o *BookCategorySlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"book_category\".* FROM \"book_category\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, bookCategoryPrimaryKeyColumns, len(*o))
+	sql := "SELECT `book_category`.* FROM `book_category` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, bookCategoryPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
@@ -1232,7 +1291,7 @@ func (o *BookCategorySlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 // BookCategoryExists checks if the BookCategory row exists.
 func BookCategoryExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"book_category\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from `book_category` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

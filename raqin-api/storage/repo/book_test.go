@@ -1181,7 +1181,7 @@ func testBooksSelect(t *testing.T) {
 }
 
 var (
-	bookDBTypes = map[string]string{`ID`: `integer`, `Name`: `character varying`, `Path`: `character varying`, `Note`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`}
+	bookDBTypes = map[string]string{`ID`: `int`, `Name`: `varchar`, `Path`: `varchar`, `Note`: `text`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_           = bytes.MinRead
 )
 
@@ -1302,19 +1302,22 @@ func testBooksUpsert(t *testing.T) {
 	if len(bookAllColumns) == len(bookPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
+	if len(mySQLBookUniqueColumns) == 0 {
+		t.Skip("Skipping table with no unique columns to conflict on")
+	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
 	o := Book{}
-	if err = randomize.Struct(seed, &o, bookDBTypes, true); err != nil {
+	if err = randomize.Struct(seed, &o, bookDBTypes, false); err != nil {
 		t.Errorf("Unable to randomize Book struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Book: %s", err)
 	}
 
@@ -1331,7 +1334,7 @@ func testBooksUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize Book struct: %s", err)
 	}
 
-	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Book: %s", err)
 	}
 

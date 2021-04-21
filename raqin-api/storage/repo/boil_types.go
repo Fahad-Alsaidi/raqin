@@ -51,31 +51,39 @@ func makeCacheKey(cols boil.Columns, nzDefaults []string) string {
 	return str
 }
 
-// Enum values for resource
+// Enum values for activity.resource
 const (
-	ResourceBOOK     = "BOOK"
-	ResourceLINE     = "LINE"
-	ResourceUSER     = "USER"
-	ResourceCATEGORY = "CATEGORY"
-	ResourceAUTHOR   = "AUTHOR"
+	ActivityResourceBOOK     = "BOOK"
+	ActivityResourceLINE     = "LINE"
+	ActivityResourceUSER     = "USER"
+	ActivityResourceCATEGORY = "CATEGORY"
+	ActivityResourceAUTHOR   = "AUTHOR"
 )
 
-// Enum values for action
+// Enum values for activity.action
 const (
-	ActionCREATE = "CREATE"
-	ActionUPDATE = "UPDATE"
-	ActionDELETE = "DELETE"
+	ActivityActionCREATE = "CREATE"
+	ActivityActionUPDATE = "UPDATE"
+	ActivityActionDELETE = "DELETE"
 )
 
-// Enum values for revision_status
+// Enum values for line.stage
 const (
-	RevisionStatusINIT = "INIT"
-	RevisionStatusREV1 = "REV1"
-	RevisionStatusREV2 = "REV2"
-	RevisionStatusDONE = "DONE"
+	LineStageINIT = "INIT"
+	LineStageREV1 = "REV1"
+	LineStageREV2 = "REV2"
+	LineStageDONE = "DONE"
 )
 
-// Enum values for user_role
+// Enum values for page.stage
+const (
+	PageStageINIT = "INIT"
+	PageStageREV1 = "REV1"
+	PageStageREV2 = "REV2"
+	PageStageDONE = "DONE"
+)
+
+// Enum values for user.role
 const (
 	UserRoleADMIN     = "ADMIN"
 	UserRoleRAQIN     = "RAQIN"

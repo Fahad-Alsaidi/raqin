@@ -494,57 +494,6 @@ func testLineRevisionsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testLineRevisionToOneLineUsingLine(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local LineRevision
-	var foreign Line
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, lineRevisionDBTypes, false, lineRevisionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize LineRevision struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, lineDBTypes, false, lineColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Line struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.LineID = foreign.ID
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Line().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := LineRevisionSlice{&local}
-	if err = local.L.LoadLine(ctx, tx, false, (*[]*LineRevision)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Line == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Line = nil
-	if err = local.L.LoadLine(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Line == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testLineRevisionToOneUserUsingReviewer(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -596,63 +545,57 @@ func testLineRevisionToOneUserUsingReviewer(t *testing.T) {
 	}
 }
 
-func testLineRevisionToOneSetOpLineUsingLine(t *testing.T) {
-	var err error
-
+func testLineRevisionToOneLineUsingLine(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a LineRevision
-	var b, c Line
+	var local LineRevision
+	var foreign Line
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &local, lineRevisionDBTypes, false, lineRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize LineRevision struct: %s", err)
 	}
-	if err = randomize.Struct(seed, &b, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
+	if err := randomize.Struct(seed, &foreign, lineDBTypes, false, lineColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Line struct: %s", err)
 	}
 
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*Line{&b, &c} {
-		err = a.SetLine(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
+	local.LineID = foreign.ID
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
 
-		if a.R.Line != x {
-			t.Error("relationship struct not set to correct value")
-		}
+	check, err := local.Line().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if x.R.LineRevisions[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.LineID != x.ID {
-			t.Error("foreign key was wrong value", a.LineID)
-		}
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
 
-		zero := reflect.Zero(reflect.TypeOf(a.LineID))
-		reflect.Indirect(reflect.ValueOf(&a.LineID)).Set(zero)
+	slice := LineRevisionSlice{&local}
+	if err = local.L.LoadLine(ctx, tx, false, (*[]*LineRevision)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Line == nil {
+		t.Error("struct should have been eager loaded")
+	}
 
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.LineID != x.ID {
-			t.Error("foreign key was wrong value", a.LineID, x.ID)
-		}
+	local.R.Line = nil
+	if err = local.L.LoadLine(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Line == nil {
+		t.Error("struct should have been eager loaded")
 	}
 }
+
 func testLineRevisionToOneSetOpUserUsingReviewer(t *testing.T) {
 	var err error
 
@@ -707,6 +650,63 @@ func testLineRevisionToOneSetOpUserUsingReviewer(t *testing.T) {
 
 		if a.ReviewerID != x.ID {
 			t.Error("foreign key was wrong value", a.ReviewerID, x.ID)
+		}
+	}
+}
+func testLineRevisionToOneSetOpLineUsingLine(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c Line
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Line{&b, &c} {
+		err = a.SetLine(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Line != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.LineRevisions[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.LineID != x.ID {
+			t.Error("foreign key was wrong value", a.LineID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.LineID))
+		reflect.Indirect(reflect.ValueOf(&a.LineID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.LineID != x.ID {
+			t.Error("foreign key was wrong value", a.LineID, x.ID)
 		}
 	}
 }
@@ -785,7 +785,7 @@ func testLineRevisionsSelect(t *testing.T) {
 }
 
 var (
-	lineRevisionDBTypes = map[string]string{`ID`: `integer`, `ReviewerID`: `integer`, `LineID`: `integer`, `LineText`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`}
+	lineRevisionDBTypes = map[string]string{`ID`: `int`, `ReviewerID`: `int`, `LineID`: `int`, `LineText`: `text`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_                   = bytes.MinRead
 )
 
@@ -906,19 +906,22 @@ func testLineRevisionsUpsert(t *testing.T) {
 	if len(lineRevisionAllColumns) == len(lineRevisionPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
+	if len(mySQLLineRevisionUniqueColumns) == 0 {
+		t.Skip("Skipping table with no unique columns to conflict on")
+	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
 	o := LineRevision{}
-	if err = randomize.Struct(seed, &o, lineRevisionDBTypes, true); err != nil {
+	if err = randomize.Struct(seed, &o, lineRevisionDBTypes, false); err != nil {
 		t.Errorf("Unable to randomize LineRevision struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert LineRevision: %s", err)
 	}
 
@@ -935,7 +938,7 @@ func testLineRevisionsUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize LineRevision struct: %s", err)
 	}
 
-	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert LineRevision: %s", err)
 	}
 

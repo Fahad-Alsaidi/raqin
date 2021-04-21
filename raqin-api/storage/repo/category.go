@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -28,7 +27,7 @@ type Category struct {
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt null.Time `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	DeletedAt time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *categoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L categoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -55,13 +54,13 @@ var CategoryWhere = struct {
 	Name      whereHelperstring
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
-	DeletedAt whereHelpernull_Time
+	DeletedAt whereHelpertime_Time
 }{
-	ID:        whereHelperint{field: "\"category\".\"id\""},
-	Name:      whereHelperstring{field: "\"category\".\"name\""},
-	CreatedAt: whereHelpertime_Time{field: "\"category\".\"created_at\""},
-	UpdatedAt: whereHelpertime_Time{field: "\"category\".\"updated_at\""},
-	DeletedAt: whereHelpernull_Time{field: "\"category\".\"deleted_at\""},
+	ID:        whereHelperint{field: "`category`.`id`"},
+	Name:      whereHelperstring{field: "`category`.`name`"},
+	CreatedAt: whereHelpertime_Time{field: "`category`.`created_at`"},
+	UpdatedAt: whereHelpertime_Time{field: "`category`.`updated_at`"},
+	DeletedAt: whereHelpertime_Time{field: "`category`.`deleted_at`"},
 }
 
 // CategoryRels is where relationship names are stored.
@@ -86,8 +85,8 @@ type categoryL struct{}
 
 var (
 	categoryAllColumns            = []string{"id", "name", "created_at", "updated_at", "deleted_at"}
-	categoryColumnsWithoutDefault = []string{"name", "deleted_at"}
-	categoryColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	categoryColumnsWithoutDefault = []string{"name"}
+	categoryColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
 	categoryPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -374,14 +373,14 @@ func (o *Category) BookCategories(mods ...qm.QueryMod) bookCategoryQuery {
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"book_category\".\"category_id\"=?", o.ID),
+		qm.Where("`book_category`.`category_id`=?", o.ID),
 	)
 
 	query := BookCategories(queryMods...)
-	queries.SetFrom(query.Query, "\"book_category\"")
+	queries.SetFrom(query.Query, "`book_category`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"book_category\".*"})
+		queries.SetSelect(query.Query, []string{"`book_category`.*"})
 	}
 
 	return query
@@ -499,9 +498,9 @@ func (o *Category) AddBookCategories(ctx context.Context, exec boil.ContextExecu
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"book_category\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"category_id"}),
-				strmangle.WhereClause("\"", "\"", 2, bookCategoryPrimaryKeyColumns),
+				"UPDATE `book_category` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"category_id"}),
+				strmangle.WhereClause("`", "`", 0, bookCategoryPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -540,7 +539,7 @@ func (o *Category) AddBookCategories(ctx context.Context, exec boil.ContextExecu
 
 // Categories retrieves all the records using an executor.
 func Categories(mods ...qm.QueryMod) categoryQuery {
-	mods = append(mods, qm.From("\"category\""))
+	mods = append(mods, qm.From("`category`"))
 	return categoryQuery{NewQuery(mods...)}
 }
 
@@ -554,7 +553,7 @@ func FindCategory(ctx context.Context, exec boil.ContextExecutor, iD int, select
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"category\" where \"id\"=$1", sel,
+		"select %s from `category` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -617,15 +616,15 @@ func (o *Category) Insert(ctx context.Context, exec boil.ContextExecutor, column
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"category\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `category` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"category\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO `category` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `category` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, categoryPrimaryKeyColumns))
 		}
 
 		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
@@ -639,17 +638,44 @@ func (o *Category) Insert(ctx context.Context, exec boil.ContextExecutor, column
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to insert into category")
 	}
 
+	var lastID int64
+	var identifierCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == categoryMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	identifierCols = []interface{}{
+		o.ID,
+	}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, identifierCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for category")
+	}
+
+CacheNoHooks:
 	if !cached {
 		categoryInsertCacheMut.Lock()
 		categoryInsertCache[key] = cache
@@ -691,9 +717,9 @@ func (o *Category) Update(ctx context.Context, exec boil.ContextExecutor, column
 			return 0, errors.New("repo: unable to update category, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"category\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, categoryPrimaryKeyColumns),
+		cache.query = fmt.Sprintf("UPDATE `category` SET %s WHERE %s",
+			strmangle.SetParamNames("`", "`", 0, wl),
+			strmangle.WhereClause("`", "`", 0, categoryPrimaryKeyColumns),
 		)
 		cache.valueMapping, err = queries.BindMapping(categoryType, categoryMapping, append(wl, categoryPrimaryKeyColumns...))
 		if err != nil {
@@ -772,9 +798,9 @@ func (o CategorySlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"category\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, categoryPrimaryKeyColumns, len(o)))
+	sql := fmt.Sprintf("UPDATE `category` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, colNames),
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, categoryPrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -793,9 +819,13 @@ func (o CategorySlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 	return rowsAff, nil
 }
 
+var mySQLCategoryUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *Category) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *Category) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("repo: no category provided for upsert")
 	}
@@ -813,19 +843,14 @@ func (o *Category) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(categoryColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLCategoryUniqueColumns, o)
+
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	if updateOnConflict {
-		buf.WriteByte('t')
-	} else {
-		buf.WriteByte('f')
-	}
-	buf.WriteByte('.')
-	for _, c := range conflictColumns {
-		buf.WriteString(c)
-	}
-	buf.WriteByte('.')
 	buf.WriteString(strconv.Itoa(updateColumns.Kind))
 	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
@@ -837,6 +862,10 @@ func (o *Category) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -860,16 +889,17 @@ func (o *Category) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 			categoryPrimaryKeyColumns,
 		)
 
-		if updateOnConflict && len(update) == 0 {
+		if !updateColumns.IsNone() && len(update) == 0 {
 			return errors.New("repo: unable to upsert category, could not build update column list")
 		}
 
-		conflict := conflictColumns
-		if len(conflict) == 0 {
-			conflict = make([]string, len(categoryPrimaryKeyColumns))
-			copy(conflict, categoryPrimaryKeyColumns)
-		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"category\"", updateOnConflict, ret, update, conflict, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "`category`", update, insert)
+		cache.retQuery = fmt.Sprintf(
+			"SELECT %s FROM `category` WHERE %s",
+			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
+		)
 
 		cache.valueMapping, err = queries.BindMapping(categoryType, categoryMapping, insert)
 		if err != nil {
@@ -895,18 +925,47 @@ func (o *Category) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
-		if err == sql.ErrNoRows {
-			err = nil // Postgres doesn't return anything when there's no update
-		}
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
+
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to upsert category")
+		return errors.Wrap(err, "repo: unable to upsert for category")
 	}
 
+	var lastID int64
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == categoryMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	uniqueMap, err = queries.BindMapping(categoryType, categoryMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to retrieve unique values for category")
+	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, nzUniqueCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, nzUniqueCols...).Scan(returns...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for category")
+	}
+
+CacheNoHooks:
 	if !cached {
 		categoryUpsertCacheMut.Lock()
 		categoryUpsertCache[key] = cache
@@ -928,7 +987,7 @@ func (o *Category) Delete(ctx context.Context, exec boil.ContextExecutor) (int64
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), categoryPrimaryKeyMapping)
-	sql := "DELETE FROM \"category\" WHERE \"id\"=$1"
+	sql := "DELETE FROM `category` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -993,8 +1052,8 @@ func (o CategorySlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"category\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, categoryPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `category` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, categoryPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1048,8 +1107,8 @@ func (o *CategorySlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"category\".* FROM \"category\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, categoryPrimaryKeyColumns, len(*o))
+	sql := "SELECT `category`.* FROM `category` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, categoryPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
@@ -1066,7 +1125,7 @@ func (o *CategorySlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 // CategoryExists checks if the Category row exists.
 func CategoryExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"category\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from `category` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

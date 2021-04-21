@@ -830,7 +830,7 @@ func testLinesSelect(t *testing.T) {
 }
 
 var (
-	lineDBTypes = map[string]string{`ID`: `integer`, `PageID`: `integer`, `Path`: `character varying`, `Number`: `integer`, `Stage`: `enum.revision_status('INIT','REV1','REV2','DONE')`, `LineText`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`}
+	lineDBTypes = map[string]string{`ID`: `int`, `PageID`: `int`, `Path`: `varchar`, `Number`: `int`, `Stage`: `enum('INIT','REV1','REV2','DONE')`, `LineText`: `text`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_           = bytes.MinRead
 )
 
@@ -951,19 +951,22 @@ func testLinesUpsert(t *testing.T) {
 	if len(lineAllColumns) == len(linePrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
+	if len(mySQLLineUniqueColumns) == 0 {
+		t.Skip("Skipping table with no unique columns to conflict on")
+	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
 	o := Line{}
-	if err = randomize.Struct(seed, &o, lineDBTypes, true); err != nil {
+	if err = randomize.Struct(seed, &o, lineDBTypes, false); err != nil {
 		t.Errorf("Unable to randomize Line struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Line: %s", err)
 	}
 
@@ -980,7 +983,7 @@ func testLinesUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize Line struct: %s", err)
 	}
 
-	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Line: %s", err)
 	}
 

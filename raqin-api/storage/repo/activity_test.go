@@ -677,7 +677,7 @@ func testActivitiesSelect(t *testing.T) {
 }
 
 var (
-	activityDBTypes = map[string]string{`ID`: `integer`, `Resource`: `enum.resource('BOOK','LINE','USER','CATEGORY','AUTHOR')`, `Action`: `enum.action('CREATE','UPDATE','DELETE')`, `UserID`: `integer`, `Value`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`}
+	activityDBTypes = map[string]string{`ID`: `int`, `Resource`: `enum('BOOK','LINE','USER','CATEGORY','AUTHOR')`, `Action`: `enum('CREATE','UPDATE','DELETE')`, `UserID`: `int`, `Value`: `text`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_               = bytes.MinRead
 )
 
@@ -798,19 +798,22 @@ func testActivitiesUpsert(t *testing.T) {
 	if len(activityAllColumns) == len(activityPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
+	if len(mySQLActivityUniqueColumns) == 0 {
+		t.Skip("Skipping table with no unique columns to conflict on")
+	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
 	o := Activity{}
-	if err = randomize.Struct(seed, &o, activityDBTypes, true); err != nil {
+	if err = randomize.Struct(seed, &o, activityDBTypes, false); err != nil {
 		t.Errorf("Unable to randomize Activity struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Activity: %s", err)
 	}
 
@@ -827,7 +830,7 @@ func testActivitiesUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize Activity struct: %s", err)
 	}
 
-	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Activity: %s", err)
 	}
 

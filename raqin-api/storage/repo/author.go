@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -29,7 +28,7 @@ type Author struct {
 	LastName  string    `boil:"last_name" json:"last_name" toml:"last_name" yaml:"last_name"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt null.Time `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	DeletedAt time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *authorR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L authorL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -59,14 +58,14 @@ var AuthorWhere = struct {
 	LastName  whereHelperstring
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
-	DeletedAt whereHelpernull_Time
+	DeletedAt whereHelpertime_Time
 }{
-	ID:        whereHelperint{field: "\"author\".\"id\""},
-	FirstName: whereHelperstring{field: "\"author\".\"first_name\""},
-	LastName:  whereHelperstring{field: "\"author\".\"last_name\""},
-	CreatedAt: whereHelpertime_Time{field: "\"author\".\"created_at\""},
-	UpdatedAt: whereHelpertime_Time{field: "\"author\".\"updated_at\""},
-	DeletedAt: whereHelpernull_Time{field: "\"author\".\"deleted_at\""},
+	ID:        whereHelperint{field: "`author`.`id`"},
+	FirstName: whereHelperstring{field: "`author`.`first_name`"},
+	LastName:  whereHelperstring{field: "`author`.`last_name`"},
+	CreatedAt: whereHelpertime_Time{field: "`author`.`created_at`"},
+	UpdatedAt: whereHelpertime_Time{field: "`author`.`updated_at`"},
+	DeletedAt: whereHelpertime_Time{field: "`author`.`deleted_at`"},
 }
 
 // AuthorRels is where relationship names are stored.
@@ -91,8 +90,8 @@ type authorL struct{}
 
 var (
 	authorAllColumns            = []string{"id", "first_name", "last_name", "created_at", "updated_at", "deleted_at"}
-	authorColumnsWithoutDefault = []string{"first_name", "last_name", "deleted_at"}
-	authorColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	authorColumnsWithoutDefault = []string{"first_name", "last_name"}
+	authorColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
 	authorPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -379,14 +378,14 @@ func (o *Author) BookAuthors(mods ...qm.QueryMod) bookAuthorQuery {
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"book_author\".\"author_id\"=?", o.ID),
+		qm.Where("`book_author`.`author_id`=?", o.ID),
 	)
 
 	query := BookAuthors(queryMods...)
-	queries.SetFrom(query.Query, "\"book_author\"")
+	queries.SetFrom(query.Query, "`book_author`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"book_author\".*"})
+		queries.SetSelect(query.Query, []string{"`book_author`.*"})
 	}
 
 	return query
@@ -504,9 +503,9 @@ func (o *Author) AddBookAuthors(ctx context.Context, exec boil.ContextExecutor, 
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"book_author\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"author_id"}),
-				strmangle.WhereClause("\"", "\"", 2, bookAuthorPrimaryKeyColumns),
+				"UPDATE `book_author` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"author_id"}),
+				strmangle.WhereClause("`", "`", 0, bookAuthorPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -545,7 +544,7 @@ func (o *Author) AddBookAuthors(ctx context.Context, exec boil.ContextExecutor, 
 
 // Authors retrieves all the records using an executor.
 func Authors(mods ...qm.QueryMod) authorQuery {
-	mods = append(mods, qm.From("\"author\""))
+	mods = append(mods, qm.From("`author`"))
 	return authorQuery{NewQuery(mods...)}
 }
 
@@ -559,7 +558,7 @@ func FindAuthor(ctx context.Context, exec boil.ContextExecutor, iD int, selectCo
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"author\" where \"id\"=$1", sel,
+		"select %s from `author` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -622,15 +621,15 @@ func (o *Author) Insert(ctx context.Context, exec boil.ContextExecutor, columns 
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"author\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `author` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"author\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO `author` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `author` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, authorPrimaryKeyColumns))
 		}
 
 		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
@@ -644,17 +643,44 @@ func (o *Author) Insert(ctx context.Context, exec boil.ContextExecutor, columns 
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to insert into author")
 	}
 
+	var lastID int64
+	var identifierCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == authorMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	identifierCols = []interface{}{
+		o.ID,
+	}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, identifierCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for author")
+	}
+
+CacheNoHooks:
 	if !cached {
 		authorInsertCacheMut.Lock()
 		authorInsertCache[key] = cache
@@ -696,9 +722,9 @@ func (o *Author) Update(ctx context.Context, exec boil.ContextExecutor, columns 
 			return 0, errors.New("repo: unable to update author, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"author\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, authorPrimaryKeyColumns),
+		cache.query = fmt.Sprintf("UPDATE `author` SET %s WHERE %s",
+			strmangle.SetParamNames("`", "`", 0, wl),
+			strmangle.WhereClause("`", "`", 0, authorPrimaryKeyColumns),
 		)
 		cache.valueMapping, err = queries.BindMapping(authorType, authorMapping, append(wl, authorPrimaryKeyColumns...))
 		if err != nil {
@@ -777,9 +803,9 @@ func (o AuthorSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, c
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"author\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, authorPrimaryKeyColumns, len(o)))
+	sql := fmt.Sprintf("UPDATE `author` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, colNames),
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, authorPrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -798,9 +824,13 @@ func (o AuthorSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, c
 	return rowsAff, nil
 }
 
+var mySQLAuthorUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *Author) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *Author) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("repo: no author provided for upsert")
 	}
@@ -818,19 +848,14 @@ func (o *Author) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(authorColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLAuthorUniqueColumns, o)
+
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	if updateOnConflict {
-		buf.WriteByte('t')
-	} else {
-		buf.WriteByte('f')
-	}
-	buf.WriteByte('.')
-	for _, c := range conflictColumns {
-		buf.WriteString(c)
-	}
-	buf.WriteByte('.')
 	buf.WriteString(strconv.Itoa(updateColumns.Kind))
 	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
@@ -842,6 +867,10 @@ func (o *Author) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -865,16 +894,17 @@ func (o *Author) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 			authorPrimaryKeyColumns,
 		)
 
-		if updateOnConflict && len(update) == 0 {
+		if !updateColumns.IsNone() && len(update) == 0 {
 			return errors.New("repo: unable to upsert author, could not build update column list")
 		}
 
-		conflict := conflictColumns
-		if len(conflict) == 0 {
-			conflict = make([]string, len(authorPrimaryKeyColumns))
-			copy(conflict, authorPrimaryKeyColumns)
-		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"author\"", updateOnConflict, ret, update, conflict, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "`author`", update, insert)
+		cache.retQuery = fmt.Sprintf(
+			"SELECT %s FROM `author` WHERE %s",
+			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
+		)
 
 		cache.valueMapping, err = queries.BindMapping(authorType, authorMapping, insert)
 		if err != nil {
@@ -900,18 +930,47 @@ func (o *Author) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOn
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
-		if err == sql.ErrNoRows {
-			err = nil // Postgres doesn't return anything when there's no update
-		}
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
+
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to upsert author")
+		return errors.Wrap(err, "repo: unable to upsert for author")
 	}
 
+	var lastID int64
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == authorMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	uniqueMap, err = queries.BindMapping(authorType, authorMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to retrieve unique values for author")
+	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, nzUniqueCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, nzUniqueCols...).Scan(returns...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for author")
+	}
+
+CacheNoHooks:
 	if !cached {
 		authorUpsertCacheMut.Lock()
 		authorUpsertCache[key] = cache
@@ -933,7 +992,7 @@ func (o *Author) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, 
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), authorPrimaryKeyMapping)
-	sql := "DELETE FROM \"author\" WHERE \"id\"=$1"
+	sql := "DELETE FROM `author` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -998,8 +1057,8 @@ func (o AuthorSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"author\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, authorPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `author` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, authorPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1053,8 +1112,8 @@ func (o *AuthorSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) 
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"author\".* FROM \"author\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, authorPrimaryKeyColumns, len(*o))
+	sql := "SELECT `author`.* FROM `author` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, authorPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
@@ -1071,7 +1130,7 @@ func (o *AuthorSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) 
 // AuthorExists checks if the Author row exists.
 func AuthorExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"author\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from `author` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

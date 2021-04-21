@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -31,7 +30,7 @@ type Activity struct {
 	Value     string    `boil:"value" json:"value" toml:"value" yaml:"value"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt null.Time `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	DeletedAt time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *activityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L activityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -126,29 +125,6 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelpernull_Time struct{ field string }
-
-func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var ActivityWhere = struct {
 	ID        whereHelperint
 	Resource  whereHelperstring
@@ -157,16 +133,16 @@ var ActivityWhere = struct {
 	Value     whereHelperstring
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
-	DeletedAt whereHelpernull_Time
+	DeletedAt whereHelpertime_Time
 }{
-	ID:        whereHelperint{field: "\"activity\".\"id\""},
-	Resource:  whereHelperstring{field: "\"activity\".\"resource\""},
-	Action:    whereHelperstring{field: "\"activity\".\"action\""},
-	UserID:    whereHelperint{field: "\"activity\".\"user_id\""},
-	Value:     whereHelperstring{field: "\"activity\".\"value\""},
-	CreatedAt: whereHelpertime_Time{field: "\"activity\".\"created_at\""},
-	UpdatedAt: whereHelpertime_Time{field: "\"activity\".\"updated_at\""},
-	DeletedAt: whereHelpernull_Time{field: "\"activity\".\"deleted_at\""},
+	ID:        whereHelperint{field: "`activity`.`id`"},
+	Resource:  whereHelperstring{field: "`activity`.`resource`"},
+	Action:    whereHelperstring{field: "`activity`.`action`"},
+	UserID:    whereHelperint{field: "`activity`.`user_id`"},
+	Value:     whereHelperstring{field: "`activity`.`value`"},
+	CreatedAt: whereHelpertime_Time{field: "`activity`.`created_at`"},
+	UpdatedAt: whereHelpertime_Time{field: "`activity`.`updated_at`"},
+	DeletedAt: whereHelpertime_Time{field: "`activity`.`deleted_at`"},
 }
 
 // ActivityRels is where relationship names are stored.
@@ -191,8 +167,8 @@ type activityL struct{}
 
 var (
 	activityAllColumns            = []string{"id", "resource", "action", "user_id", "value", "created_at", "updated_at", "deleted_at"}
-	activityColumnsWithoutDefault = []string{"resource", "action", "user_id", "value", "deleted_at"}
-	activityColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	activityColumnsWithoutDefault = []string{"resource", "action", "user_id", "value"}
+	activityColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
 	activityPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -474,13 +450,13 @@ func (q activityQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (b
 // User pointed to by the foreign key.
 func (o *Activity) User(mods ...qm.QueryMod) userQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.UserID),
+		qm.Where("`id` = ?", o.UserID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
 	query := Users(queryMods...)
-	queries.SetFrom(query.Query, "\"user\"")
+	queries.SetFrom(query.Query, "`user`")
 
 	return query
 }
@@ -601,9 +577,9 @@ func (o *Activity) SetUser(ctx context.Context, exec boil.ContextExecutor, inser
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"activity\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
-		strmangle.WhereClause("\"", "\"", 2, activityPrimaryKeyColumns),
+		"UPDATE `activity` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"user_id"}),
+		strmangle.WhereClause("`", "`", 0, activityPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -638,7 +614,7 @@ func (o *Activity) SetUser(ctx context.Context, exec boil.ContextExecutor, inser
 
 // Activities retrieves all the records using an executor.
 func Activities(mods ...qm.QueryMod) activityQuery {
-	mods = append(mods, qm.From("\"activity\""))
+	mods = append(mods, qm.From("`activity`"))
 	return activityQuery{NewQuery(mods...)}
 }
 
@@ -652,7 +628,7 @@ func FindActivity(ctx context.Context, exec boil.ContextExecutor, iD int, select
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"activity\" where \"id\"=$1", sel,
+		"select %s from `activity` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -715,15 +691,15 @@ func (o *Activity) Insert(ctx context.Context, exec boil.ContextExecutor, column
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"activity\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `activity` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"activity\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO `activity` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `activity` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, activityPrimaryKeyColumns))
 		}
 
 		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
@@ -737,17 +713,44 @@ func (o *Activity) Insert(ctx context.Context, exec boil.ContextExecutor, column
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to insert into activity")
 	}
 
+	var lastID int64
+	var identifierCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == activityMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	identifierCols = []interface{}{
+		o.ID,
+	}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, identifierCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for activity")
+	}
+
+CacheNoHooks:
 	if !cached {
 		activityInsertCacheMut.Lock()
 		activityInsertCache[key] = cache
@@ -789,9 +792,9 @@ func (o *Activity) Update(ctx context.Context, exec boil.ContextExecutor, column
 			return 0, errors.New("repo: unable to update activity, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"activity\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, activityPrimaryKeyColumns),
+		cache.query = fmt.Sprintf("UPDATE `activity` SET %s WHERE %s",
+			strmangle.SetParamNames("`", "`", 0, wl),
+			strmangle.WhereClause("`", "`", 0, activityPrimaryKeyColumns),
 		)
 		cache.valueMapping, err = queries.BindMapping(activityType, activityMapping, append(wl, activityPrimaryKeyColumns...))
 		if err != nil {
@@ -870,9 +873,9 @@ func (o ActivitySlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"activity\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, activityPrimaryKeyColumns, len(o)))
+	sql := fmt.Sprintf("UPDATE `activity` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, colNames),
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, activityPrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -891,9 +894,13 @@ func (o ActivitySlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 	return rowsAff, nil
 }
 
+var mySQLActivityUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *Activity) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *Activity) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("repo: no activity provided for upsert")
 	}
@@ -911,19 +918,14 @@ func (o *Activity) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(activityColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLActivityUniqueColumns, o)
+
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	if updateOnConflict {
-		buf.WriteByte('t')
-	} else {
-		buf.WriteByte('f')
-	}
-	buf.WriteByte('.')
-	for _, c := range conflictColumns {
-		buf.WriteString(c)
-	}
-	buf.WriteByte('.')
 	buf.WriteString(strconv.Itoa(updateColumns.Kind))
 	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
@@ -935,6 +937,10 @@ func (o *Activity) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -958,16 +964,17 @@ func (o *Activity) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 			activityPrimaryKeyColumns,
 		)
 
-		if updateOnConflict && len(update) == 0 {
+		if !updateColumns.IsNone() && len(update) == 0 {
 			return errors.New("repo: unable to upsert activity, could not build update column list")
 		}
 
-		conflict := conflictColumns
-		if len(conflict) == 0 {
-			conflict = make([]string, len(activityPrimaryKeyColumns))
-			copy(conflict, activityPrimaryKeyColumns)
-		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"activity\"", updateOnConflict, ret, update, conflict, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "`activity`", update, insert)
+		cache.retQuery = fmt.Sprintf(
+			"SELECT %s FROM `activity` WHERE %s",
+			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
+		)
 
 		cache.valueMapping, err = queries.BindMapping(activityType, activityMapping, insert)
 		if err != nil {
@@ -993,18 +1000,47 @@ func (o *Activity) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
-		if err == sql.ErrNoRows {
-			err = nil // Postgres doesn't return anything when there's no update
-		}
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
+
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to upsert activity")
+		return errors.Wrap(err, "repo: unable to upsert for activity")
 	}
 
+	var lastID int64
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == activityMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	uniqueMap, err = queries.BindMapping(activityType, activityMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to retrieve unique values for activity")
+	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, nzUniqueCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, nzUniqueCols...).Scan(returns...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for activity")
+	}
+
+CacheNoHooks:
 	if !cached {
 		activityUpsertCacheMut.Lock()
 		activityUpsertCache[key] = cache
@@ -1026,7 +1062,7 @@ func (o *Activity) Delete(ctx context.Context, exec boil.ContextExecutor) (int64
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), activityPrimaryKeyMapping)
-	sql := "DELETE FROM \"activity\" WHERE \"id\"=$1"
+	sql := "DELETE FROM `activity` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1091,8 +1127,8 @@ func (o ActivitySlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"activity\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, activityPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `activity` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, activityPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1146,8 +1182,8 @@ func (o *ActivitySlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"activity\".* FROM \"activity\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, activityPrimaryKeyColumns, len(*o))
+	sql := "SELECT `activity`.* FROM `activity` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, activityPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
@@ -1164,7 +1200,7 @@ func (o *ActivitySlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 // ActivityExists checks if the Activity row exists.
 func ActivityExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"activity\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from `activity` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

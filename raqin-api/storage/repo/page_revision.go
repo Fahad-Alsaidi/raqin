@@ -30,7 +30,7 @@ type PageRevision struct {
 	PageText   null.String `boil:"page_text" json:"page_text,omitempty" toml:"page_text" yaml:"page_text,omitempty"`
 	CreatedAt  time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt  time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt  null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	DeletedAt  time.Time   `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *pageRevisionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L pageRevisionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -63,30 +63,30 @@ var PageRevisionWhere = struct {
 	PageText   whereHelpernull_String
 	CreatedAt  whereHelpertime_Time
 	UpdatedAt  whereHelpertime_Time
-	DeletedAt  whereHelpernull_Time
+	DeletedAt  whereHelpertime_Time
 }{
-	ID:         whereHelperint{field: "\"page_revision\".\"id\""},
-	ReviewerID: whereHelperint{field: "\"page_revision\".\"reviewer_id\""},
-	PageID:     whereHelperint{field: "\"page_revision\".\"page_id\""},
-	PageText:   whereHelpernull_String{field: "\"page_revision\".\"page_text\""},
-	CreatedAt:  whereHelpertime_Time{field: "\"page_revision\".\"created_at\""},
-	UpdatedAt:  whereHelpertime_Time{field: "\"page_revision\".\"updated_at\""},
-	DeletedAt:  whereHelpernull_Time{field: "\"page_revision\".\"deleted_at\""},
+	ID:         whereHelperint{field: "`page_revision`.`id`"},
+	ReviewerID: whereHelperint{field: "`page_revision`.`reviewer_id`"},
+	PageID:     whereHelperint{field: "`page_revision`.`page_id`"},
+	PageText:   whereHelpernull_String{field: "`page_revision`.`page_text`"},
+	CreatedAt:  whereHelpertime_Time{field: "`page_revision`.`created_at`"},
+	UpdatedAt:  whereHelpertime_Time{field: "`page_revision`.`updated_at`"},
+	DeletedAt:  whereHelpertime_Time{field: "`page_revision`.`deleted_at`"},
 }
 
 // PageRevisionRels is where relationship names are stored.
 var PageRevisionRels = struct {
-	Page     string
 	Reviewer string
+	Page     string
 }{
-	Page:     "Page",
 	Reviewer: "Reviewer",
+	Page:     "Page",
 }
 
 // pageRevisionR is where relationships are stored.
 type pageRevisionR struct {
-	Page     *Page `boil:"Page" json:"Page" toml:"Page" yaml:"Page"`
 	Reviewer *User `boil:"Reviewer" json:"Reviewer" toml:"Reviewer" yaml:"Reviewer"`
+	Page     *Page `boil:"Page" json:"Page" toml:"Page" yaml:"Page"`
 }
 
 // NewStruct creates a new relationship struct
@@ -99,8 +99,8 @@ type pageRevisionL struct{}
 
 var (
 	pageRevisionAllColumns            = []string{"id", "reviewer_id", "page_id", "page_text", "created_at", "updated_at", "deleted_at"}
-	pageRevisionColumnsWithoutDefault = []string{"reviewer_id", "page_id", "page_text", "deleted_at"}
-	pageRevisionColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	pageRevisionColumnsWithoutDefault = []string{"reviewer_id", "page_id", "page_text"}
+	pageRevisionColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
 	pageRevisionPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -379,136 +379,32 @@ func (q pageRevisionQuery) Exists(ctx context.Context, exec boil.ContextExecutor
 	return count > 0, nil
 }
 
-// Page pointed to by the foreign key.
-func (o *PageRevision) Page(mods ...qm.QueryMod) pageQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.PageID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Pages(queryMods...)
-	queries.SetFrom(query.Query, "\"page\"")
-
-	return query
-}
-
 // Reviewer pointed to by the foreign key.
 func (o *PageRevision) Reviewer(mods ...qm.QueryMod) userQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.ReviewerID),
+		qm.Where("`id` = ?", o.ReviewerID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
 	query := Users(queryMods...)
-	queries.SetFrom(query.Query, "\"user\"")
+	queries.SetFrom(query.Query, "`user`")
 
 	return query
 }
 
-// LoadPage allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (pageRevisionL) LoadPage(ctx context.Context, e boil.ContextExecutor, singular bool, maybePageRevision interface{}, mods queries.Applicator) error {
-	var slice []*PageRevision
-	var object *PageRevision
-
-	if singular {
-		object = maybePageRevision.(*PageRevision)
-	} else {
-		slice = *maybePageRevision.(*[]*PageRevision)
+// Page pointed to by the foreign key.
+func (o *PageRevision) Page(mods ...qm.QueryMod) pageQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("`id` = ?", o.PageID),
 	}
 
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &pageRevisionR{}
-		}
-		args = append(args, object.PageID)
+	queryMods = append(queryMods, mods...)
 
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &pageRevisionR{}
-			}
+	query := Pages(queryMods...)
+	queries.SetFrom(query.Query, "`page`")
 
-			for _, a := range args {
-				if a == obj.PageID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.PageID)
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`page`),
-		qm.WhereIn(`page.id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Page")
-	}
-
-	var resultSlice []*Page
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Page")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for page")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page")
-	}
-
-	if len(pageRevisionAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Page = foreign
-		if foreign.R == nil {
-			foreign.R = &pageR{}
-		}
-		foreign.R.PageRevisions = append(foreign.R.PageRevisions, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.PageID == foreign.ID {
-				local.R.Page = foreign
-				if foreign.R == nil {
-					foreign.R = &pageR{}
-				}
-				foreign.R.PageRevisions = append(foreign.R.PageRevisions, local)
-				break
-			}
-		}
-	}
-
-	return nil
+	return query
 }
 
 // LoadReviewer allows an eager lookup of values, cached into the
@@ -615,48 +511,105 @@ func (pageRevisionL) LoadReviewer(ctx context.Context, e boil.ContextExecutor, s
 	return nil
 }
 
-// SetPage of the pageRevision to the related item.
-// Sets o.R.Page to related.
-// Adds o to related.R.PageRevisions.
-func (o *PageRevision) SetPage(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Page) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+// LoadPage allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (pageRevisionL) LoadPage(ctx context.Context, e boil.ContextExecutor, singular bool, maybePageRevision interface{}, mods queries.Applicator) error {
+	var slice []*PageRevision
+	var object *PageRevision
+
+	if singular {
+		object = maybePageRevision.(*PageRevision)
+	} else {
+		slice = *maybePageRevision.(*[]*PageRevision)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &pageRevisionR{}
+		}
+		args = append(args, object.PageID)
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &pageRevisionR{}
+			}
+
+			for _, a := range args {
+				if a == obj.PageID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.PageID)
+
 		}
 	}
 
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"page_revision\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"page_id"}),
-		strmangle.WhereClause("\"", "\"", 2, pageRevisionPrimaryKeyColumns),
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`page`),
+		qm.WhereIn(`page.id in ?`, args...),
 	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	o.PageID = related.ID
-	if o.R == nil {
-		o.R = &pageRevisionR{
-			Page: related,
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Page")
+	}
+
+	var resultSlice []*Page
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Page")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for page")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page")
+	}
+
+	if len(pageRevisionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
 		}
-	} else {
-		o.R.Page = related
 	}
 
-	if related.R == nil {
-		related.R = &pageR{
-			PageRevisions: PageRevisionSlice{o},
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Page = foreign
+		if foreign.R == nil {
+			foreign.R = &pageR{}
 		}
-	} else {
-		related.R.PageRevisions = append(related.R.PageRevisions, o)
+		foreign.R.PageRevisions = append(foreign.R.PageRevisions, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.PageID == foreign.ID {
+				local.R.Page = foreign
+				if foreign.R == nil {
+					foreign.R = &pageR{}
+				}
+				foreign.R.PageRevisions = append(foreign.R.PageRevisions, local)
+				break
+			}
+		}
 	}
 
 	return nil
@@ -674,9 +627,9 @@ func (o *PageRevision) SetReviewer(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"page_revision\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"reviewer_id"}),
-		strmangle.WhereClause("\"", "\"", 2, pageRevisionPrimaryKeyColumns),
+		"UPDATE `page_revision` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"reviewer_id"}),
+		strmangle.WhereClause("`", "`", 0, pageRevisionPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -709,9 +662,56 @@ func (o *PageRevision) SetReviewer(ctx context.Context, exec boil.ContextExecuto
 	return nil
 }
 
+// SetPage of the pageRevision to the related item.
+// Sets o.R.Page to related.
+// Adds o to related.R.PageRevisions.
+func (o *PageRevision) SetPage(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Page) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE `page_revision` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"page_id"}),
+		strmangle.WhereClause("`", "`", 0, pageRevisionPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.PageID = related.ID
+	if o.R == nil {
+		o.R = &pageRevisionR{
+			Page: related,
+		}
+	} else {
+		o.R.Page = related
+	}
+
+	if related.R == nil {
+		related.R = &pageR{
+			PageRevisions: PageRevisionSlice{o},
+		}
+	} else {
+		related.R.PageRevisions = append(related.R.PageRevisions, o)
+	}
+
+	return nil
+}
+
 // PageRevisions retrieves all the records using an executor.
 func PageRevisions(mods ...qm.QueryMod) pageRevisionQuery {
-	mods = append(mods, qm.From("\"page_revision\""))
+	mods = append(mods, qm.From("`page_revision`"))
 	return pageRevisionQuery{NewQuery(mods...)}
 }
 
@@ -725,7 +725,7 @@ func FindPageRevision(ctx context.Context, exec boil.ContextExecutor, iD int, se
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"page_revision\" where \"id\"=$1", sel,
+		"select %s from `page_revision` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -788,15 +788,15 @@ func (o *PageRevision) Insert(ctx context.Context, exec boil.ContextExecutor, co
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"page_revision\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `page_revision` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"page_revision\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO `page_revision` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `page_revision` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, pageRevisionPrimaryKeyColumns))
 		}
 
 		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
@@ -810,17 +810,44 @@ func (o *PageRevision) Insert(ctx context.Context, exec boil.ContextExecutor, co
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to insert into page_revision")
 	}
 
+	var lastID int64
+	var identifierCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == pageRevisionMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	identifierCols = []interface{}{
+		o.ID,
+	}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, identifierCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for page_revision")
+	}
+
+CacheNoHooks:
 	if !cached {
 		pageRevisionInsertCacheMut.Lock()
 		pageRevisionInsertCache[key] = cache
@@ -862,9 +889,9 @@ func (o *PageRevision) Update(ctx context.Context, exec boil.ContextExecutor, co
 			return 0, errors.New("repo: unable to update page_revision, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"page_revision\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, pageRevisionPrimaryKeyColumns),
+		cache.query = fmt.Sprintf("UPDATE `page_revision` SET %s WHERE %s",
+			strmangle.SetParamNames("`", "`", 0, wl),
+			strmangle.WhereClause("`", "`", 0, pageRevisionPrimaryKeyColumns),
 		)
 		cache.valueMapping, err = queries.BindMapping(pageRevisionType, pageRevisionMapping, append(wl, pageRevisionPrimaryKeyColumns...))
 		if err != nil {
@@ -943,9 +970,9 @@ func (o PageRevisionSlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"page_revision\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, pageRevisionPrimaryKeyColumns, len(o)))
+	sql := fmt.Sprintf("UPDATE `page_revision` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, colNames),
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, pageRevisionPrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -964,9 +991,13 @@ func (o PageRevisionSlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 	return rowsAff, nil
 }
 
+var mySQLPageRevisionUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *PageRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *PageRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("repo: no page_revision provided for upsert")
 	}
@@ -984,19 +1015,14 @@ func (o *PageRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(pageRevisionColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLPageRevisionUniqueColumns, o)
+
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	if updateOnConflict {
-		buf.WriteByte('t')
-	} else {
-		buf.WriteByte('f')
-	}
-	buf.WriteByte('.')
-	for _, c := range conflictColumns {
-		buf.WriteString(c)
-	}
-	buf.WriteByte('.')
 	buf.WriteString(strconv.Itoa(updateColumns.Kind))
 	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
@@ -1008,6 +1034,10 @@ func (o *PageRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -1031,16 +1061,17 @@ func (o *PageRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 			pageRevisionPrimaryKeyColumns,
 		)
 
-		if updateOnConflict && len(update) == 0 {
+		if !updateColumns.IsNone() && len(update) == 0 {
 			return errors.New("repo: unable to upsert page_revision, could not build update column list")
 		}
 
-		conflict := conflictColumns
-		if len(conflict) == 0 {
-			conflict = make([]string, len(pageRevisionPrimaryKeyColumns))
-			copy(conflict, pageRevisionPrimaryKeyColumns)
-		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"page_revision\"", updateOnConflict, ret, update, conflict, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "`page_revision`", update, insert)
+		cache.retQuery = fmt.Sprintf(
+			"SELECT %s FROM `page_revision` WHERE %s",
+			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
+		)
 
 		cache.valueMapping, err = queries.BindMapping(pageRevisionType, pageRevisionMapping, insert)
 		if err != nil {
@@ -1066,18 +1097,47 @@ func (o *PageRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
-		if err == sql.ErrNoRows {
-			err = nil // Postgres doesn't return anything when there's no update
-		}
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
+
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to upsert page_revision")
+		return errors.Wrap(err, "repo: unable to upsert for page_revision")
 	}
 
+	var lastID int64
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == pageRevisionMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	uniqueMap, err = queries.BindMapping(pageRevisionType, pageRevisionMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to retrieve unique values for page_revision")
+	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, nzUniqueCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, nzUniqueCols...).Scan(returns...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for page_revision")
+	}
+
+CacheNoHooks:
 	if !cached {
 		pageRevisionUpsertCacheMut.Lock()
 		pageRevisionUpsertCache[key] = cache
@@ -1099,7 +1159,7 @@ func (o *PageRevision) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), pageRevisionPrimaryKeyMapping)
-	sql := "DELETE FROM \"page_revision\" WHERE \"id\"=$1"
+	sql := "DELETE FROM `page_revision` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1164,8 +1224,8 @@ func (o PageRevisionSlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"page_revision\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, pageRevisionPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `page_revision` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, pageRevisionPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1219,8 +1279,8 @@ func (o *PageRevisionSlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"page_revision\".* FROM \"page_revision\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, pageRevisionPrimaryKeyColumns, len(*o))
+	sql := "SELECT `page_revision`.* FROM `page_revision` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, pageRevisionPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
@@ -1237,7 +1297,7 @@ func (o *PageRevisionSlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 // PageRevisionExists checks if the PageRevision row exists.
 func PageRevisionExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"page_revision\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from `page_revision` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

@@ -30,7 +30,7 @@ type LineRevision struct {
 	LineText   null.String `boil:"line_text" json:"line_text,omitempty" toml:"line_text" yaml:"line_text,omitempty"`
 	CreatedAt  time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt  time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt  null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	DeletedAt  time.Time   `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *lineRevisionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L lineRevisionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -63,30 +63,30 @@ var LineRevisionWhere = struct {
 	LineText   whereHelpernull_String
 	CreatedAt  whereHelpertime_Time
 	UpdatedAt  whereHelpertime_Time
-	DeletedAt  whereHelpernull_Time
+	DeletedAt  whereHelpertime_Time
 }{
-	ID:         whereHelperint{field: "\"line_revision\".\"id\""},
-	ReviewerID: whereHelperint{field: "\"line_revision\".\"reviewer_id\""},
-	LineID:     whereHelperint{field: "\"line_revision\".\"line_id\""},
-	LineText:   whereHelpernull_String{field: "\"line_revision\".\"line_text\""},
-	CreatedAt:  whereHelpertime_Time{field: "\"line_revision\".\"created_at\""},
-	UpdatedAt:  whereHelpertime_Time{field: "\"line_revision\".\"updated_at\""},
-	DeletedAt:  whereHelpernull_Time{field: "\"line_revision\".\"deleted_at\""},
+	ID:         whereHelperint{field: "`line_revision`.`id`"},
+	ReviewerID: whereHelperint{field: "`line_revision`.`reviewer_id`"},
+	LineID:     whereHelperint{field: "`line_revision`.`line_id`"},
+	LineText:   whereHelpernull_String{field: "`line_revision`.`line_text`"},
+	CreatedAt:  whereHelpertime_Time{field: "`line_revision`.`created_at`"},
+	UpdatedAt:  whereHelpertime_Time{field: "`line_revision`.`updated_at`"},
+	DeletedAt:  whereHelpertime_Time{field: "`line_revision`.`deleted_at`"},
 }
 
 // LineRevisionRels is where relationship names are stored.
 var LineRevisionRels = struct {
-	Line     string
 	Reviewer string
+	Line     string
 }{
-	Line:     "Line",
 	Reviewer: "Reviewer",
+	Line:     "Line",
 }
 
 // lineRevisionR is where relationships are stored.
 type lineRevisionR struct {
-	Line     *Line `boil:"Line" json:"Line" toml:"Line" yaml:"Line"`
 	Reviewer *User `boil:"Reviewer" json:"Reviewer" toml:"Reviewer" yaml:"Reviewer"`
+	Line     *Line `boil:"Line" json:"Line" toml:"Line" yaml:"Line"`
 }
 
 // NewStruct creates a new relationship struct
@@ -99,8 +99,8 @@ type lineRevisionL struct{}
 
 var (
 	lineRevisionAllColumns            = []string{"id", "reviewer_id", "line_id", "line_text", "created_at", "updated_at", "deleted_at"}
-	lineRevisionColumnsWithoutDefault = []string{"reviewer_id", "line_id", "line_text", "deleted_at"}
-	lineRevisionColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	lineRevisionColumnsWithoutDefault = []string{"reviewer_id", "line_id", "line_text"}
+	lineRevisionColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
 	lineRevisionPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -379,136 +379,32 @@ func (q lineRevisionQuery) Exists(ctx context.Context, exec boil.ContextExecutor
 	return count > 0, nil
 }
 
-// Line pointed to by the foreign key.
-func (o *LineRevision) Line(mods ...qm.QueryMod) lineQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.LineID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Lines(queryMods...)
-	queries.SetFrom(query.Query, "\"line\"")
-
-	return query
-}
-
 // Reviewer pointed to by the foreign key.
 func (o *LineRevision) Reviewer(mods ...qm.QueryMod) userQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.ReviewerID),
+		qm.Where("`id` = ?", o.ReviewerID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
 	query := Users(queryMods...)
-	queries.SetFrom(query.Query, "\"user\"")
+	queries.SetFrom(query.Query, "`user`")
 
 	return query
 }
 
-// LoadLine allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (lineRevisionL) LoadLine(ctx context.Context, e boil.ContextExecutor, singular bool, maybeLineRevision interface{}, mods queries.Applicator) error {
-	var slice []*LineRevision
-	var object *LineRevision
-
-	if singular {
-		object = maybeLineRevision.(*LineRevision)
-	} else {
-		slice = *maybeLineRevision.(*[]*LineRevision)
+// Line pointed to by the foreign key.
+func (o *LineRevision) Line(mods ...qm.QueryMod) lineQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("`id` = ?", o.LineID),
 	}
 
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &lineRevisionR{}
-		}
-		args = append(args, object.LineID)
+	queryMods = append(queryMods, mods...)
 
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &lineRevisionR{}
-			}
+	query := Lines(queryMods...)
+	queries.SetFrom(query.Query, "`line`")
 
-			for _, a := range args {
-				if a == obj.LineID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.LineID)
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`line`),
-		qm.WhereIn(`line.id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Line")
-	}
-
-	var resultSlice []*Line
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Line")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for line")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line")
-	}
-
-	if len(lineRevisionAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Line = foreign
-		if foreign.R == nil {
-			foreign.R = &lineR{}
-		}
-		foreign.R.LineRevisions = append(foreign.R.LineRevisions, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.LineID == foreign.ID {
-				local.R.Line = foreign
-				if foreign.R == nil {
-					foreign.R = &lineR{}
-				}
-				foreign.R.LineRevisions = append(foreign.R.LineRevisions, local)
-				break
-			}
-		}
-	}
-
-	return nil
+	return query
 }
 
 // LoadReviewer allows an eager lookup of values, cached into the
@@ -615,48 +511,105 @@ func (lineRevisionL) LoadReviewer(ctx context.Context, e boil.ContextExecutor, s
 	return nil
 }
 
-// SetLine of the lineRevision to the related item.
-// Sets o.R.Line to related.
-// Adds o to related.R.LineRevisions.
-func (o *LineRevision) SetLine(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Line) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+// LoadLine allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (lineRevisionL) LoadLine(ctx context.Context, e boil.ContextExecutor, singular bool, maybeLineRevision interface{}, mods queries.Applicator) error {
+	var slice []*LineRevision
+	var object *LineRevision
+
+	if singular {
+		object = maybeLineRevision.(*LineRevision)
+	} else {
+		slice = *maybeLineRevision.(*[]*LineRevision)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &lineRevisionR{}
+		}
+		args = append(args, object.LineID)
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &lineRevisionR{}
+			}
+
+			for _, a := range args {
+				if a == obj.LineID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.LineID)
+
 		}
 	}
 
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"line_revision\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"line_id"}),
-		strmangle.WhereClause("\"", "\"", 2, lineRevisionPrimaryKeyColumns),
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`line`),
+		qm.WhereIn(`line.id in ?`, args...),
 	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	o.LineID = related.ID
-	if o.R == nil {
-		o.R = &lineRevisionR{
-			Line: related,
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Line")
+	}
+
+	var resultSlice []*Line
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Line")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for line")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line")
+	}
+
+	if len(lineRevisionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
 		}
-	} else {
-		o.R.Line = related
 	}
 
-	if related.R == nil {
-		related.R = &lineR{
-			LineRevisions: LineRevisionSlice{o},
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Line = foreign
+		if foreign.R == nil {
+			foreign.R = &lineR{}
 		}
-	} else {
-		related.R.LineRevisions = append(related.R.LineRevisions, o)
+		foreign.R.LineRevisions = append(foreign.R.LineRevisions, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.LineID == foreign.ID {
+				local.R.Line = foreign
+				if foreign.R == nil {
+					foreign.R = &lineR{}
+				}
+				foreign.R.LineRevisions = append(foreign.R.LineRevisions, local)
+				break
+			}
+		}
 	}
 
 	return nil
@@ -674,9 +627,9 @@ func (o *LineRevision) SetReviewer(ctx context.Context, exec boil.ContextExecuto
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"line_revision\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"reviewer_id"}),
-		strmangle.WhereClause("\"", "\"", 2, lineRevisionPrimaryKeyColumns),
+		"UPDATE `line_revision` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"reviewer_id"}),
+		strmangle.WhereClause("`", "`", 0, lineRevisionPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -709,9 +662,56 @@ func (o *LineRevision) SetReviewer(ctx context.Context, exec boil.ContextExecuto
 	return nil
 }
 
+// SetLine of the lineRevision to the related item.
+// Sets o.R.Line to related.
+// Adds o to related.R.LineRevisions.
+func (o *LineRevision) SetLine(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Line) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE `line_revision` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"line_id"}),
+		strmangle.WhereClause("`", "`", 0, lineRevisionPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.LineID = related.ID
+	if o.R == nil {
+		o.R = &lineRevisionR{
+			Line: related,
+		}
+	} else {
+		o.R.Line = related
+	}
+
+	if related.R == nil {
+		related.R = &lineR{
+			LineRevisions: LineRevisionSlice{o},
+		}
+	} else {
+		related.R.LineRevisions = append(related.R.LineRevisions, o)
+	}
+
+	return nil
+}
+
 // LineRevisions retrieves all the records using an executor.
 func LineRevisions(mods ...qm.QueryMod) lineRevisionQuery {
-	mods = append(mods, qm.From("\"line_revision\""))
+	mods = append(mods, qm.From("`line_revision`"))
 	return lineRevisionQuery{NewQuery(mods...)}
 }
 
@@ -725,7 +725,7 @@ func FindLineRevision(ctx context.Context, exec boil.ContextExecutor, iD int, se
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"line_revision\" where \"id\"=$1", sel,
+		"select %s from `line_revision` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -788,15 +788,15 @@ func (o *LineRevision) Insert(ctx context.Context, exec boil.ContextExecutor, co
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"line_revision\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `line_revision` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"line_revision\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO `line_revision` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `line_revision` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, lineRevisionPrimaryKeyColumns))
 		}
 
 		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
@@ -810,17 +810,44 @@ func (o *LineRevision) Insert(ctx context.Context, exec boil.ContextExecutor, co
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to insert into line_revision")
 	}
 
+	var lastID int64
+	var identifierCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == lineRevisionMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	identifierCols = []interface{}{
+		o.ID,
+	}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, identifierCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for line_revision")
+	}
+
+CacheNoHooks:
 	if !cached {
 		lineRevisionInsertCacheMut.Lock()
 		lineRevisionInsertCache[key] = cache
@@ -862,9 +889,9 @@ func (o *LineRevision) Update(ctx context.Context, exec boil.ContextExecutor, co
 			return 0, errors.New("repo: unable to update line_revision, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"line_revision\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, lineRevisionPrimaryKeyColumns),
+		cache.query = fmt.Sprintf("UPDATE `line_revision` SET %s WHERE %s",
+			strmangle.SetParamNames("`", "`", 0, wl),
+			strmangle.WhereClause("`", "`", 0, lineRevisionPrimaryKeyColumns),
 		)
 		cache.valueMapping, err = queries.BindMapping(lineRevisionType, lineRevisionMapping, append(wl, lineRevisionPrimaryKeyColumns...))
 		if err != nil {
@@ -943,9 +970,9 @@ func (o LineRevisionSlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"line_revision\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, lineRevisionPrimaryKeyColumns, len(o)))
+	sql := fmt.Sprintf("UPDATE `line_revision` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, colNames),
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, lineRevisionPrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -964,9 +991,13 @@ func (o LineRevisionSlice) UpdateAll(ctx context.Context, exec boil.ContextExecu
 	return rowsAff, nil
 }
 
+var mySQLLineRevisionUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *LineRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *LineRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("repo: no line_revision provided for upsert")
 	}
@@ -984,19 +1015,14 @@ func (o *LineRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(lineRevisionColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLLineRevisionUniqueColumns, o)
+
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	if updateOnConflict {
-		buf.WriteByte('t')
-	} else {
-		buf.WriteByte('f')
-	}
-	buf.WriteByte('.')
-	for _, c := range conflictColumns {
-		buf.WriteString(c)
-	}
-	buf.WriteByte('.')
 	buf.WriteString(strconv.Itoa(updateColumns.Kind))
 	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
@@ -1008,6 +1034,10 @@ func (o *LineRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -1031,16 +1061,17 @@ func (o *LineRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 			lineRevisionPrimaryKeyColumns,
 		)
 
-		if updateOnConflict && len(update) == 0 {
+		if !updateColumns.IsNone() && len(update) == 0 {
 			return errors.New("repo: unable to upsert line_revision, could not build update column list")
 		}
 
-		conflict := conflictColumns
-		if len(conflict) == 0 {
-			conflict = make([]string, len(lineRevisionPrimaryKeyColumns))
-			copy(conflict, lineRevisionPrimaryKeyColumns)
-		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"line_revision\"", updateOnConflict, ret, update, conflict, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "`line_revision`", update, insert)
+		cache.retQuery = fmt.Sprintf(
+			"SELECT %s FROM `line_revision` WHERE %s",
+			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
+		)
 
 		cache.valueMapping, err = queries.BindMapping(lineRevisionType, lineRevisionMapping, insert)
 		if err != nil {
@@ -1066,18 +1097,47 @@ func (o *LineRevision) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
-		if err == sql.ErrNoRows {
-			err = nil // Postgres doesn't return anything when there's no update
-		}
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
+
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to upsert line_revision")
+		return errors.Wrap(err, "repo: unable to upsert for line_revision")
 	}
 
+	var lastID int64
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == lineRevisionMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	uniqueMap, err = queries.BindMapping(lineRevisionType, lineRevisionMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to retrieve unique values for line_revision")
+	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, nzUniqueCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, nzUniqueCols...).Scan(returns...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for line_revision")
+	}
+
+CacheNoHooks:
 	if !cached {
 		lineRevisionUpsertCacheMut.Lock()
 		lineRevisionUpsertCache[key] = cache
@@ -1099,7 +1159,7 @@ func (o *LineRevision) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), lineRevisionPrimaryKeyMapping)
-	sql := "DELETE FROM \"line_revision\" WHERE \"id\"=$1"
+	sql := "DELETE FROM `line_revision` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1164,8 +1224,8 @@ func (o LineRevisionSlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"line_revision\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, lineRevisionPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `line_revision` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, lineRevisionPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1219,8 +1279,8 @@ func (o *LineRevisionSlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"line_revision\".* FROM \"line_revision\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, lineRevisionPrimaryKeyColumns, len(*o))
+	sql := "SELECT `line_revision`.* FROM `line_revision` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, lineRevisionPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
@@ -1237,7 +1297,7 @@ func (o *LineRevisionSlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 // LineRevisionExists checks if the LineRevision row exists.
 func LineRevisionExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"line_revision\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from `line_revision` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

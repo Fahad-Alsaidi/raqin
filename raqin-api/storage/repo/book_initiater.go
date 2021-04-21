@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -29,7 +28,7 @@ type BookInitiater struct {
 	BookID    int       `boil:"book_id" json:"book_id" toml:"book_id" yaml:"book_id"`
 	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt null.Time `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	DeletedAt time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *bookInitiaterR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L bookInitiaterL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -59,29 +58,29 @@ var BookInitiaterWhere = struct {
 	BookID    whereHelperint
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
-	DeletedAt whereHelpernull_Time
+	DeletedAt whereHelpertime_Time
 }{
-	ID:        whereHelperint{field: "\"book_initiater\".\"id\""},
-	UserID:    whereHelperint{field: "\"book_initiater\".\"user_id\""},
-	BookID:    whereHelperint{field: "\"book_initiater\".\"book_id\""},
-	CreatedAt: whereHelpertime_Time{field: "\"book_initiater\".\"created_at\""},
-	UpdatedAt: whereHelpertime_Time{field: "\"book_initiater\".\"updated_at\""},
-	DeletedAt: whereHelpernull_Time{field: "\"book_initiater\".\"deleted_at\""},
+	ID:        whereHelperint{field: "`book_initiater`.`id`"},
+	UserID:    whereHelperint{field: "`book_initiater`.`user_id`"},
+	BookID:    whereHelperint{field: "`book_initiater`.`book_id`"},
+	CreatedAt: whereHelpertime_Time{field: "`book_initiater`.`created_at`"},
+	UpdatedAt: whereHelpertime_Time{field: "`book_initiater`.`updated_at`"},
+	DeletedAt: whereHelpertime_Time{field: "`book_initiater`.`deleted_at`"},
 }
 
 // BookInitiaterRels is where relationship names are stored.
 var BookInitiaterRels = struct {
-	Book string
 	User string
+	Book string
 }{
-	Book: "Book",
 	User: "User",
+	Book: "Book",
 }
 
 // bookInitiaterR is where relationships are stored.
 type bookInitiaterR struct {
-	Book *Book `boil:"Book" json:"Book" toml:"Book" yaml:"Book"`
 	User *User `boil:"User" json:"User" toml:"User" yaml:"User"`
+	Book *Book `boil:"Book" json:"Book" toml:"Book" yaml:"Book"`
 }
 
 // NewStruct creates a new relationship struct
@@ -94,8 +93,8 @@ type bookInitiaterL struct{}
 
 var (
 	bookInitiaterAllColumns            = []string{"id", "user_id", "book_id", "created_at", "updated_at", "deleted_at"}
-	bookInitiaterColumnsWithoutDefault = []string{"user_id", "book_id", "deleted_at"}
-	bookInitiaterColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	bookInitiaterColumnsWithoutDefault = []string{"user_id", "book_id"}
+	bookInitiaterColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
 	bookInitiaterPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -374,136 +373,32 @@ func (q bookInitiaterQuery) Exists(ctx context.Context, exec boil.ContextExecuto
 	return count > 0, nil
 }
 
-// Book pointed to by the foreign key.
-func (o *BookInitiater) Book(mods ...qm.QueryMod) bookQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.BookID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Books(queryMods...)
-	queries.SetFrom(query.Query, "\"book\"")
-
-	return query
-}
-
 // User pointed to by the foreign key.
 func (o *BookInitiater) User(mods ...qm.QueryMod) userQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.UserID),
+		qm.Where("`id` = ?", o.UserID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
 	query := Users(queryMods...)
-	queries.SetFrom(query.Query, "\"user\"")
+	queries.SetFrom(query.Query, "`user`")
 
 	return query
 }
 
-// LoadBook allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (bookInitiaterL) LoadBook(ctx context.Context, e boil.ContextExecutor, singular bool, maybeBookInitiater interface{}, mods queries.Applicator) error {
-	var slice []*BookInitiater
-	var object *BookInitiater
-
-	if singular {
-		object = maybeBookInitiater.(*BookInitiater)
-	} else {
-		slice = *maybeBookInitiater.(*[]*BookInitiater)
+// Book pointed to by the foreign key.
+func (o *BookInitiater) Book(mods ...qm.QueryMod) bookQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("`id` = ?", o.BookID),
 	}
 
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &bookInitiaterR{}
-		}
-		args = append(args, object.BookID)
+	queryMods = append(queryMods, mods...)
 
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &bookInitiaterR{}
-			}
+	query := Books(queryMods...)
+	queries.SetFrom(query.Query, "`book`")
 
-			for _, a := range args {
-				if a == obj.BookID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.BookID)
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`book`),
-		qm.WhereIn(`book.id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Book")
-	}
-
-	var resultSlice []*Book
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Book")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for book")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for book")
-	}
-
-	if len(bookInitiaterAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Book = foreign
-		if foreign.R == nil {
-			foreign.R = &bookR{}
-		}
-		foreign.R.BookInitiaters = append(foreign.R.BookInitiaters, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.BookID == foreign.ID {
-				local.R.Book = foreign
-				if foreign.R == nil {
-					foreign.R = &bookR{}
-				}
-				foreign.R.BookInitiaters = append(foreign.R.BookInitiaters, local)
-				break
-			}
-		}
-	}
-
-	return nil
+	return query
 }
 
 // LoadUser allows an eager lookup of values, cached into the
@@ -610,48 +505,105 @@ func (bookInitiaterL) LoadUser(ctx context.Context, e boil.ContextExecutor, sing
 	return nil
 }
 
-// SetBook of the bookInitiater to the related item.
-// Sets o.R.Book to related.
-// Adds o to related.R.BookInitiaters.
-func (o *BookInitiater) SetBook(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Book) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
+// LoadBook allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (bookInitiaterL) LoadBook(ctx context.Context, e boil.ContextExecutor, singular bool, maybeBookInitiater interface{}, mods queries.Applicator) error {
+	var slice []*BookInitiater
+	var object *BookInitiater
+
+	if singular {
+		object = maybeBookInitiater.(*BookInitiater)
+	} else {
+		slice = *maybeBookInitiater.(*[]*BookInitiater)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &bookInitiaterR{}
+		}
+		args = append(args, object.BookID)
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &bookInitiaterR{}
+			}
+
+			for _, a := range args {
+				if a == obj.BookID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.BookID)
+
 		}
 	}
 
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"book_initiater\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"book_id"}),
-		strmangle.WhereClause("\"", "\"", 2, bookInitiaterPrimaryKeyColumns),
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`book`),
+		qm.WhereIn(`book.id in ?`, args...),
 	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	o.BookID = related.ID
-	if o.R == nil {
-		o.R = &bookInitiaterR{
-			Book: related,
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Book")
+	}
+
+	var resultSlice []*Book
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Book")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for book")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for book")
+	}
+
+	if len(bookInitiaterAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
 		}
-	} else {
-		o.R.Book = related
 	}
 
-	if related.R == nil {
-		related.R = &bookR{
-			BookInitiaters: BookInitiaterSlice{o},
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Book = foreign
+		if foreign.R == nil {
+			foreign.R = &bookR{}
 		}
-	} else {
-		related.R.BookInitiaters = append(related.R.BookInitiaters, o)
+		foreign.R.BookInitiaters = append(foreign.R.BookInitiaters, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.BookID == foreign.ID {
+				local.R.Book = foreign
+				if foreign.R == nil {
+					foreign.R = &bookR{}
+				}
+				foreign.R.BookInitiaters = append(foreign.R.BookInitiaters, local)
+				break
+			}
+		}
 	}
 
 	return nil
@@ -669,9 +621,9 @@ func (o *BookInitiater) SetUser(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"book_initiater\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
-		strmangle.WhereClause("\"", "\"", 2, bookInitiaterPrimaryKeyColumns),
+		"UPDATE `book_initiater` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"user_id"}),
+		strmangle.WhereClause("`", "`", 0, bookInitiaterPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -704,9 +656,56 @@ func (o *BookInitiater) SetUser(ctx context.Context, exec boil.ContextExecutor, 
 	return nil
 }
 
+// SetBook of the bookInitiater to the related item.
+// Sets o.R.Book to related.
+// Adds o to related.R.BookInitiaters.
+func (o *BookInitiater) SetBook(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Book) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE `book_initiater` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"book_id"}),
+		strmangle.WhereClause("`", "`", 0, bookInitiaterPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.BookID = related.ID
+	if o.R == nil {
+		o.R = &bookInitiaterR{
+			Book: related,
+		}
+	} else {
+		o.R.Book = related
+	}
+
+	if related.R == nil {
+		related.R = &bookR{
+			BookInitiaters: BookInitiaterSlice{o},
+		}
+	} else {
+		related.R.BookInitiaters = append(related.R.BookInitiaters, o)
+	}
+
+	return nil
+}
+
 // BookInitiaters retrieves all the records using an executor.
 func BookInitiaters(mods ...qm.QueryMod) bookInitiaterQuery {
-	mods = append(mods, qm.From("\"book_initiater\""))
+	mods = append(mods, qm.From("`book_initiater`"))
 	return bookInitiaterQuery{NewQuery(mods...)}
 }
 
@@ -720,7 +719,7 @@ func FindBookInitiater(ctx context.Context, exec boil.ContextExecutor, iD int, s
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"book_initiater\" where \"id\"=$1", sel,
+		"select %s from `book_initiater` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -783,15 +782,15 @@ func (o *BookInitiater) Insert(ctx context.Context, exec boil.ContextExecutor, c
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"book_initiater\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `book_initiater` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"book_initiater\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO `book_initiater` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `book_initiater` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, bookInitiaterPrimaryKeyColumns))
 		}
 
 		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
@@ -805,17 +804,44 @@ func (o *BookInitiater) Insert(ctx context.Context, exec boil.ContextExecutor, c
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to insert into book_initiater")
 	}
 
+	var lastID int64
+	var identifierCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == bookInitiaterMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	identifierCols = []interface{}{
+		o.ID,
+	}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, identifierCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for book_initiater")
+	}
+
+CacheNoHooks:
 	if !cached {
 		bookInitiaterInsertCacheMut.Lock()
 		bookInitiaterInsertCache[key] = cache
@@ -857,9 +883,9 @@ func (o *BookInitiater) Update(ctx context.Context, exec boil.ContextExecutor, c
 			return 0, errors.New("repo: unable to update book_initiater, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"book_initiater\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, bookInitiaterPrimaryKeyColumns),
+		cache.query = fmt.Sprintf("UPDATE `book_initiater` SET %s WHERE %s",
+			strmangle.SetParamNames("`", "`", 0, wl),
+			strmangle.WhereClause("`", "`", 0, bookInitiaterPrimaryKeyColumns),
 		)
 		cache.valueMapping, err = queries.BindMapping(bookInitiaterType, bookInitiaterMapping, append(wl, bookInitiaterPrimaryKeyColumns...))
 		if err != nil {
@@ -938,9 +964,9 @@ func (o BookInitiaterSlice) UpdateAll(ctx context.Context, exec boil.ContextExec
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"book_initiater\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, bookInitiaterPrimaryKeyColumns, len(o)))
+	sql := fmt.Sprintf("UPDATE `book_initiater` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, colNames),
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, bookInitiaterPrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -959,9 +985,13 @@ func (o BookInitiaterSlice) UpdateAll(ctx context.Context, exec boil.ContextExec
 	return rowsAff, nil
 }
 
+var mySQLBookInitiaterUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *BookInitiater) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *BookInitiater) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("repo: no book_initiater provided for upsert")
 	}
@@ -979,19 +1009,14 @@ func (o *BookInitiater) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(bookInitiaterColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLBookInitiaterUniqueColumns, o)
+
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	if updateOnConflict {
-		buf.WriteByte('t')
-	} else {
-		buf.WriteByte('f')
-	}
-	buf.WriteByte('.')
-	for _, c := range conflictColumns {
-		buf.WriteString(c)
-	}
-	buf.WriteByte('.')
 	buf.WriteString(strconv.Itoa(updateColumns.Kind))
 	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
@@ -1003,6 +1028,10 @@ func (o *BookInitiater) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -1026,16 +1055,17 @@ func (o *BookInitiater) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 			bookInitiaterPrimaryKeyColumns,
 		)
 
-		if updateOnConflict && len(update) == 0 {
+		if !updateColumns.IsNone() && len(update) == 0 {
 			return errors.New("repo: unable to upsert book_initiater, could not build update column list")
 		}
 
-		conflict := conflictColumns
-		if len(conflict) == 0 {
-			conflict = make([]string, len(bookInitiaterPrimaryKeyColumns))
-			copy(conflict, bookInitiaterPrimaryKeyColumns)
-		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"book_initiater\"", updateOnConflict, ret, update, conflict, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "`book_initiater`", update, insert)
+		cache.retQuery = fmt.Sprintf(
+			"SELECT %s FROM `book_initiater` WHERE %s",
+			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
+		)
 
 		cache.valueMapping, err = queries.BindMapping(bookInitiaterType, bookInitiaterMapping, insert)
 		if err != nil {
@@ -1061,18 +1091,47 @@ func (o *BookInitiater) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
-		if err == sql.ErrNoRows {
-			err = nil // Postgres doesn't return anything when there's no update
-		}
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
+
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to upsert book_initiater")
+		return errors.Wrap(err, "repo: unable to upsert for book_initiater")
 	}
 
+	var lastID int64
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == bookInitiaterMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	uniqueMap, err = queries.BindMapping(bookInitiaterType, bookInitiaterMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to retrieve unique values for book_initiater")
+	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, nzUniqueCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, nzUniqueCols...).Scan(returns...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for book_initiater")
+	}
+
+CacheNoHooks:
 	if !cached {
 		bookInitiaterUpsertCacheMut.Lock()
 		bookInitiaterUpsertCache[key] = cache
@@ -1094,7 +1153,7 @@ func (o *BookInitiater) Delete(ctx context.Context, exec boil.ContextExecutor) (
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), bookInitiaterPrimaryKeyMapping)
-	sql := "DELETE FROM \"book_initiater\" WHERE \"id\"=$1"
+	sql := "DELETE FROM `book_initiater` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1159,8 +1218,8 @@ func (o BookInitiaterSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"book_initiater\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, bookInitiaterPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `book_initiater` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, bookInitiaterPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1214,8 +1273,8 @@ func (o *BookInitiaterSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"book_initiater\".* FROM \"book_initiater\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, bookInitiaterPrimaryKeyColumns, len(*o))
+	sql := "SELECT `book_initiater`.* FROM `book_initiater` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, bookInitiaterPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
@@ -1232,7 +1291,7 @@ func (o *BookInitiaterSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 // BookInitiaterExists checks if the BookInitiater row exists.
 func BookInitiaterExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"book_initiater\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from `book_initiater` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

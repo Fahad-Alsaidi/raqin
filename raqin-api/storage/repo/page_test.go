@@ -983,7 +983,7 @@ func testPagesSelect(t *testing.T) {
 }
 
 var (
-	pageDBTypes = map[string]string{`ID`: `integer`, `BookID`: `integer`, `Path`: `character varying`, `Number`: `integer`, `Stage`: `enum.revision_status('INIT','REV1','REV2','DONE')`, `PageText`: `text`, `CreatedAt`: `timestamp without time zone`, `UpdatedAt`: `timestamp without time zone`, `DeletedAt`: `timestamp without time zone`}
+	pageDBTypes = map[string]string{`ID`: `int`, `BookID`: `int`, `Path`: `varchar`, `Number`: `int`, `Stage`: `enum('INIT','REV1','REV2','DONE')`, `PageText`: `text`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_           = bytes.MinRead
 )
 
@@ -1104,19 +1104,22 @@ func testPagesUpsert(t *testing.T) {
 	if len(pageAllColumns) == len(pagePrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
+	if len(mySQLPageUniqueColumns) == 0 {
+		t.Skip("Skipping table with no unique columns to conflict on")
+	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
 	o := Page{}
-	if err = randomize.Struct(seed, &o, pageDBTypes, true); err != nil {
+	if err = randomize.Struct(seed, &o, pageDBTypes, false); err != nil {
 		t.Errorf("Unable to randomize Page struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Page: %s", err)
 	}
 
@@ -1133,7 +1136,7 @@ func testPagesUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize Page struct: %s", err)
 	}
 
-	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Page: %s", err)
 	}
 

@@ -32,7 +32,7 @@ type Page struct {
 	PageText  null.String `boil:"page_text" json:"page_text,omitempty" toml:"page_text" yaml:"page_text,omitempty"`
 	CreatedAt time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	DeletedAt time.Time   `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *pageR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L pageL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -71,17 +71,17 @@ var PageWhere = struct {
 	PageText  whereHelpernull_String
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
-	DeletedAt whereHelpernull_Time
+	DeletedAt whereHelpertime_Time
 }{
-	ID:        whereHelperint{field: "\"page\".\"id\""},
-	BookID:    whereHelperint{field: "\"page\".\"book_id\""},
-	Path:      whereHelperstring{field: "\"page\".\"path\""},
-	Number:    whereHelperint{field: "\"page\".\"number\""},
-	Stage:     whereHelperstring{field: "\"page\".\"stage\""},
-	PageText:  whereHelpernull_String{field: "\"page\".\"page_text\""},
-	CreatedAt: whereHelpertime_Time{field: "\"page\".\"created_at\""},
-	UpdatedAt: whereHelpertime_Time{field: "\"page\".\"updated_at\""},
-	DeletedAt: whereHelpernull_Time{field: "\"page\".\"deleted_at\""},
+	ID:        whereHelperint{field: "`page`.`id`"},
+	BookID:    whereHelperint{field: "`page`.`book_id`"},
+	Path:      whereHelperstring{field: "`page`.`path`"},
+	Number:    whereHelperint{field: "`page`.`number`"},
+	Stage:     whereHelperstring{field: "`page`.`stage`"},
+	PageText:  whereHelpernull_String{field: "`page`.`page_text`"},
+	CreatedAt: whereHelpertime_Time{field: "`page`.`created_at`"},
+	UpdatedAt: whereHelpertime_Time{field: "`page`.`updated_at`"},
+	DeletedAt: whereHelpertime_Time{field: "`page`.`deleted_at`"},
 }
 
 // PageRels is where relationship names are stored.
@@ -112,8 +112,8 @@ type pageL struct{}
 
 var (
 	pageAllColumns            = []string{"id", "book_id", "path", "number", "stage", "page_text", "created_at", "updated_at", "deleted_at"}
-	pageColumnsWithoutDefault = []string{"book_id", "path", "number", "stage", "page_text", "deleted_at"}
-	pageColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	pageColumnsWithoutDefault = []string{"book_id", "path", "number", "stage", "page_text"}
+	pageColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
 	pagePrimaryKeyColumns     = []string{"id"}
 )
 
@@ -395,13 +395,13 @@ func (q pageQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 // Book pointed to by the foreign key.
 func (o *Page) Book(mods ...qm.QueryMod) bookQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.BookID),
+		qm.Where("`id` = ?", o.BookID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
 	query := Books(queryMods...)
-	queries.SetFrom(query.Query, "\"book\"")
+	queries.SetFrom(query.Query, "`book`")
 
 	return query
 }
@@ -414,14 +414,14 @@ func (o *Page) Lines(mods ...qm.QueryMod) lineQuery {
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"line\".\"page_id\"=?", o.ID),
+		qm.Where("`line`.`page_id`=?", o.ID),
 	)
 
 	query := Lines(queryMods...)
-	queries.SetFrom(query.Query, "\"line\"")
+	queries.SetFrom(query.Query, "`line`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"line\".*"})
+		queries.SetSelect(query.Query, []string{"`line`.*"})
 	}
 
 	return query
@@ -435,14 +435,14 @@ func (o *Page) PageRevisions(mods ...qm.QueryMod) pageRevisionQuery {
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"page_revision\".\"page_id\"=?", o.ID),
+		qm.Where("`page_revision`.`page_id`=?", o.ID),
 	)
 
 	query := PageRevisions(queryMods...)
-	queries.SetFrom(query.Query, "\"page_revision\"")
+	queries.SetFrom(query.Query, "`page_revision`")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"page_revision\".*"})
+		queries.SetSelect(query.Query, []string{"`page_revision`.*"})
 	}
 
 	return query
@@ -760,9 +760,9 @@ func (o *Page) SetBook(ctx context.Context, exec boil.ContextExecutor, insert bo
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"page\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"book_id"}),
-		strmangle.WhereClause("\"", "\"", 2, pagePrimaryKeyColumns),
+		"UPDATE `page` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"book_id"}),
+		strmangle.WhereClause("`", "`", 0, pagePrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -809,9 +809,9 @@ func (o *Page) AddLines(ctx context.Context, exec boil.ContextExecutor, insert b
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"line\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"page_id"}),
-				strmangle.WhereClause("\"", "\"", 2, linePrimaryKeyColumns),
+				"UPDATE `line` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"page_id"}),
+				strmangle.WhereClause("`", "`", 0, linePrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -862,9 +862,9 @@ func (o *Page) AddPageRevisions(ctx context.Context, exec boil.ContextExecutor, 
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"page_revision\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"page_id"}),
-				strmangle.WhereClause("\"", "\"", 2, pageRevisionPrimaryKeyColumns),
+				"UPDATE `page_revision` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"page_id"}),
+				strmangle.WhereClause("`", "`", 0, pageRevisionPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -903,7 +903,7 @@ func (o *Page) AddPageRevisions(ctx context.Context, exec boil.ContextExecutor, 
 
 // Pages retrieves all the records using an executor.
 func Pages(mods ...qm.QueryMod) pageQuery {
-	mods = append(mods, qm.From("\"page\""))
+	mods = append(mods, qm.From("`page`"))
 	return pageQuery{NewQuery(mods...)}
 }
 
@@ -917,7 +917,7 @@ func FindPage(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"page\" where \"id\"=$1", sel,
+		"select %s from `page` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -980,15 +980,15 @@ func (o *Page) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"page\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO `page` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"page\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO `page` () VALUES ()%s%s"
 		}
 
 		var queryOutput, queryReturning string
 
 		if len(cache.retMapping) != 0 {
-			queryReturning = fmt.Sprintf(" RETURNING \"%s\"", strings.Join(returnColumns, "\",\""))
+			cache.retQuery = fmt.Sprintf("SELECT `%s` FROM `page` WHERE %s", strings.Join(returnColumns, "`,`"), strmangle.WhereClause("`", "`", 0, pagePrimaryKeyColumns))
 		}
 
 		cache.query = fmt.Sprintf(cache.query, queryOutput, queryReturning)
@@ -1002,17 +1002,44 @@ func (o *Page) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "repo: unable to insert into page")
 	}
 
+	var lastID int64
+	var identifierCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == pageMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	identifierCols = []interface{}{
+		o.ID,
+	}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, identifierCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, identifierCols...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for page")
+	}
+
+CacheNoHooks:
 	if !cached {
 		pageInsertCacheMut.Lock()
 		pageInsertCache[key] = cache
@@ -1054,9 +1081,9 @@ func (o *Page) Update(ctx context.Context, exec boil.ContextExecutor, columns bo
 			return 0, errors.New("repo: unable to update page, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"page\" SET %s WHERE %s",
-			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, pagePrimaryKeyColumns),
+		cache.query = fmt.Sprintf("UPDATE `page` SET %s WHERE %s",
+			strmangle.SetParamNames("`", "`", 0, wl),
+			strmangle.WhereClause("`", "`", 0, pagePrimaryKeyColumns),
 		)
 		cache.valueMapping, err = queries.BindMapping(pageType, pageMapping, append(wl, pagePrimaryKeyColumns...))
 		if err != nil {
@@ -1135,9 +1162,9 @@ func (o PageSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"page\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, pagePrimaryKeyColumns, len(o)))
+	sql := fmt.Sprintf("UPDATE `page` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, colNames),
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, pagePrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1156,9 +1183,13 @@ func (o PageSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 	return rowsAff, nil
 }
 
+var mySQLPageUniqueColumns = []string{
+	"id",
+}
+
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *Page) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *Page) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("repo: no page provided for upsert")
 	}
@@ -1176,19 +1207,14 @@ func (o *Page) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(pageColumnsWithDefault, o)
+	nzUniques := queries.NonZeroDefaultSet(mySQLPageUniqueColumns, o)
+
+	if len(nzUniques) == 0 {
+		return errors.New("cannot upsert with a table that cannot conflict on a unique column")
+	}
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
-	if updateOnConflict {
-		buf.WriteByte('t')
-	} else {
-		buf.WriteByte('f')
-	}
-	buf.WriteByte('.')
-	for _, c := range conflictColumns {
-		buf.WriteString(c)
-	}
-	buf.WriteByte('.')
 	buf.WriteString(strconv.Itoa(updateColumns.Kind))
 	for _, c := range updateColumns.Cols {
 		buf.WriteString(c)
@@ -1200,6 +1226,10 @@ func (o *Page) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 	}
 	buf.WriteByte('.')
 	for _, c := range nzDefaults {
+		buf.WriteString(c)
+	}
+	buf.WriteByte('.')
+	for _, c := range nzUniques {
 		buf.WriteString(c)
 	}
 	key := buf.String()
@@ -1223,16 +1253,17 @@ func (o *Page) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 			pagePrimaryKeyColumns,
 		)
 
-		if updateOnConflict && len(update) == 0 {
+		if !updateColumns.IsNone() && len(update) == 0 {
 			return errors.New("repo: unable to upsert page, could not build update column list")
 		}
 
-		conflict := conflictColumns
-		if len(conflict) == 0 {
-			conflict = make([]string, len(pagePrimaryKeyColumns))
-			copy(conflict, pagePrimaryKeyColumns)
-		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"page\"", updateOnConflict, ret, update, conflict, insert)
+		ret = strmangle.SetComplement(ret, nzUniques)
+		cache.query = buildUpsertQueryMySQL(dialect, "`page`", update, insert)
+		cache.retQuery = fmt.Sprintf(
+			"SELECT %s FROM `page` WHERE %s",
+			strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, ret), ","),
+			strmangle.WhereClause("`", "`", 0, nzUniques),
+		)
 
 		cache.valueMapping, err = queries.BindMapping(pageType, pageMapping, insert)
 		if err != nil {
@@ -1258,18 +1289,47 @@ func (o *Page) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	if len(cache.retMapping) != 0 {
-		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
-		if err == sql.ErrNoRows {
-			err = nil // Postgres doesn't return anything when there's no update
-		}
-	} else {
-		_, err = exec.ExecContext(ctx, cache.query, vals...)
-	}
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
+
 	if err != nil {
-		return errors.Wrap(err, "repo: unable to upsert page")
+		return errors.Wrap(err, "repo: unable to upsert for page")
 	}
 
+	var lastID int64
+	var uniqueMap []uint64
+	var nzUniqueCols []interface{}
+
+	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = int(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == pageMapping["id"] {
+		goto CacheNoHooks
+	}
+
+	uniqueMap, err = queries.BindMapping(pageType, pageMapping, nzUniques)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to retrieve unique values for page")
+	}
+	nzUniqueCols = queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), uniqueMap)
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, cache.retQuery)
+		fmt.Fprintln(writer, nzUniqueCols...)
+	}
+	err = exec.QueryRowContext(ctx, cache.retQuery, nzUniqueCols...).Scan(returns...)
+	if err != nil {
+		return errors.Wrap(err, "repo: unable to populate default values for page")
+	}
+
+CacheNoHooks:
 	if !cached {
 		pageUpsertCacheMut.Lock()
 		pageUpsertCache[key] = cache
@@ -1291,7 +1351,7 @@ func (o *Page) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, er
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), pagePrimaryKeyMapping)
-	sql := "DELETE FROM \"page\" WHERE \"id\"=$1"
+	sql := "DELETE FROM `page` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1356,8 +1416,8 @@ func (o PageSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (in
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"page\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, pagePrimaryKeyColumns, len(o))
+	sql := "DELETE FROM `page` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, pagePrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1411,8 +1471,8 @@ func (o *PageSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"page\".* FROM \"page\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, pagePrimaryKeyColumns, len(*o))
+	sql := "SELECT `page`.* FROM `page` WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 0, pagePrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
@@ -1429,7 +1489,7 @@ func (o *PageSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 // PageExists checks if the Page row exists.
 func PageExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"page\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from `page` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

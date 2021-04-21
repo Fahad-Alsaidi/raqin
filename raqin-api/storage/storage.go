@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var dbInstance *sql.DB
@@ -12,11 +12,11 @@ var dbInstance *sql.DB
 func Connect() error {
 
 	dbURI := fmt.Sprintf(
-		"user=%s password=%s host=%s dbname=%s sslmode=disable TimeZone=Asia/Muscat",
-		"user", "password", "localhost", "raqin")
+		"%s:%s@tcp(%s)/%s",
+		"root", "password", "localhost", "raqin")
 
 	var err error
-	dbInstance, err = sql.Open("postgres", dbURI)
+	dbInstance, err = sql.Open("mysql", dbURI)
 	if err != nil {
 		panic(err)
 	}

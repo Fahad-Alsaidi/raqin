@@ -207,18 +207,18 @@ func TestInsert(t *testing.T) {
 // or deadlocks can occur.
 func TestToOne(t *testing.T) {
 	t.Run("ActivityToUserUsingUser", testActivityToOneUserUsingUser)
-	t.Run("BookAuthorToAuthorUsingAuthor", testBookAuthorToOneAuthorUsingAuthor)
 	t.Run("BookAuthorToBookUsingBook", testBookAuthorToOneBookUsingBook)
+	t.Run("BookAuthorToAuthorUsingAuthor", testBookAuthorToOneAuthorUsingAuthor)
 	t.Run("BookCategoryToBookUsingBook", testBookCategoryToOneBookUsingBook)
 	t.Run("BookCategoryToCategoryUsingCategory", testBookCategoryToOneCategoryUsingCategory)
-	t.Run("BookInitiaterToBookUsingBook", testBookInitiaterToOneBookUsingBook)
 	t.Run("BookInitiaterToUserUsingUser", testBookInitiaterToOneUserUsingUser)
+	t.Run("BookInitiaterToBookUsingBook", testBookInitiaterToOneBookUsingBook)
 	t.Run("LineToPageUsingPage", testLineToOnePageUsingPage)
-	t.Run("LineRevisionToLineUsingLine", testLineRevisionToOneLineUsingLine)
 	t.Run("LineRevisionToUserUsingReviewer", testLineRevisionToOneUserUsingReviewer)
+	t.Run("LineRevisionToLineUsingLine", testLineRevisionToOneLineUsingLine)
 	t.Run("PageToBookUsingBook", testPageToOneBookUsingBook)
-	t.Run("PageRevisionToPageUsingPage", testPageRevisionToOnePageUsingPage)
 	t.Run("PageRevisionToUserUsingReviewer", testPageRevisionToOneUserUsingReviewer)
+	t.Run("PageRevisionToPageUsingPage", testPageRevisionToOnePageUsingPage)
 }
 
 // TestOneToOne tests cannot be run in parallel
@@ -247,18 +247,18 @@ func TestToMany(t *testing.T) {
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
 	t.Run("ActivityToUserUsingActivities", testActivityToOneSetOpUserUsingUser)
-	t.Run("BookAuthorToAuthorUsingBookAuthors", testBookAuthorToOneSetOpAuthorUsingAuthor)
 	t.Run("BookAuthorToBookUsingBookAuthors", testBookAuthorToOneSetOpBookUsingBook)
+	t.Run("BookAuthorToAuthorUsingBookAuthors", testBookAuthorToOneSetOpAuthorUsingAuthor)
 	t.Run("BookCategoryToBookUsingBookCategories", testBookCategoryToOneSetOpBookUsingBook)
 	t.Run("BookCategoryToCategoryUsingBookCategories", testBookCategoryToOneSetOpCategoryUsingCategory)
-	t.Run("BookInitiaterToBookUsingBookInitiaters", testBookInitiaterToOneSetOpBookUsingBook)
 	t.Run("BookInitiaterToUserUsingBookInitiaters", testBookInitiaterToOneSetOpUserUsingUser)
+	t.Run("BookInitiaterToBookUsingBookInitiaters", testBookInitiaterToOneSetOpBookUsingBook)
 	t.Run("LineToPageUsingLines", testLineToOneSetOpPageUsingPage)
-	t.Run("LineRevisionToLineUsingLineRevisions", testLineRevisionToOneSetOpLineUsingLine)
 	t.Run("LineRevisionToUserUsingReviewerLineRevisions", testLineRevisionToOneSetOpUserUsingReviewer)
+	t.Run("LineRevisionToLineUsingLineRevisions", testLineRevisionToOneSetOpLineUsingLine)
 	t.Run("PageToBookUsingPages", testPageToOneSetOpBookUsingBook)
-	t.Run("PageRevisionToPageUsingPageRevisions", testPageRevisionToOneSetOpPageUsingPage)
 	t.Run("PageRevisionToUserUsingReviewerPageRevisions", testPageRevisionToOneSetOpUserUsingReviewer)
+	t.Run("PageRevisionToPageUsingPageRevisions", testPageRevisionToOneSetOpPageUsingPage)
 }
 
 // TestToOneRemove tests cannot be run in parallel
