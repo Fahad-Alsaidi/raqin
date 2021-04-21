@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/friendsofgo/errors v0.9.2
 	github.com/gen2brain/go-fitz v0.0.0-20210316172528-f0a07eb93909
+	github.com/go-sql-driver/mysql v1.5.0
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/lib/pq v1.2.1-0.20191011153232-f91d3411e481
