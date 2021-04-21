@@ -2,10 +2,10 @@ blacklist=[]
 pkgname="repo"
 output="storage/repo"
 schema="public"
-[psql]
+[mysql]
   dbname="raqin"
   host="localhost"
-  port=5432
-  user="user"
+  port=3306
+  user="root"
   pass="password"
-  sslmode="disable"
+  sslmode="false"
