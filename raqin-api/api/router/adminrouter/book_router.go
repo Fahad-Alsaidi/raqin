@@ -1,14 +1,15 @@
 package adminrouter
 
 import (
-	book "raqin-api/core/app/book"
+	"raqin-api/app/book"
+	"raqin-api/storage"
 
 	"github.com/labstack/echo/v4"
 )
 
 func bookRouter(gRoute *echo.Group) {
 	// init NewBookController with NewBookService
-	bookCtrl := book.NewBookController(book.NewBookService())
+	bookCtrl := book.NewBookController(book.NewBookService(storage.DBInstance()))
 
 	gRoute.POST("/upload", bookCtrl.UploadNewBook)
 }

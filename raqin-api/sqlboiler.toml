@@ -1,0 +1,11 @@
+blacklist=[]
+pkgname="repo"
+output="storage/repo"
+schema="public"
+[mysql]
+  dbname="raqin"
+  host="localhost"
+  port=3306
+  user="root"
+  pass="password"
+  sslmode="false"
