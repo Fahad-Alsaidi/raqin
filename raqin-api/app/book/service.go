@@ -43,8 +43,8 @@ func (bs *bookService) NewBookProject(in NewBookRequest) {
 	}
 
 	book := &repo.Book{
-		Name: "some book",
-		Note: null.StringFrom("i dont know"),
+		Name: in.Name,
+		Note: null.StringFrom(in.Notes),
 		Path: fileName,
 	}
 
