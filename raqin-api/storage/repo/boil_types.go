@@ -69,6 +69,7 @@ const (
 
 // Enum values for line.stage
 const (
+	LineStageNONE = "NONE"
 	LineStageINIT = "INIT"
 	LineStageREV1 = "REV1"
 	LineStageREV2 = "REV2"
@@ -77,6 +78,7 @@ const (
 
 // Enum values for page.stage
 const (
+	PageStageNONE = "NONE"
 	PageStageINIT = "INIT"
 	PageStageREV1 = "REV1"
 	PageStageREV2 = "REV2"

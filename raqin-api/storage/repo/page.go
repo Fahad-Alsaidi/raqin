@@ -112,8 +112,8 @@ type pageL struct{}
 
 var (
 	pageAllColumns            = []string{"id", "book_id", "path", "number", "stage", "page_text", "created_at", "updated_at", "deleted_at"}
-	pageColumnsWithoutDefault = []string{"book_id", "path", "number", "stage", "page_text"}
-	pageColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
+	pageColumnsWithoutDefault = []string{"book_id", "path", "number", "page_text"}
+	pageColumnsWithDefault    = []string{"id", "stage", "created_at", "updated_at", "deleted_at"}
 	pagePrimaryKeyColumns     = []string{"id"}
 )
 
