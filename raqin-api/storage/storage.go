@@ -12,7 +12,7 @@ var dbInstance *sql.DB
 func Connect() error {
 
 	dbURI := fmt.Sprintf(
-		"%s:%s@tcp(%s)/%s",
+		"%s:%s@tcp(%s)/%s?parseTime=true",
 		"root", "password", "localhost", "raqin")
 
 	var err error
