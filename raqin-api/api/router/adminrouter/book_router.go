@@ -9,7 +9,8 @@ import (
 
 func bookRouter(gRoute *echo.Group) {
 	// init NewBookController with NewBookService
-	bookCtrl := book.NewBookController(book.NewBookService(storage.DBInstance()))
+	db := storage.DBInstance()
+	bookCtrl := book.NewBookController(book.NewBookService(book.NewBookRepo(db)))
 
 	gRoute.POST("/upload", bookCtrl.UploadNewBook)
 }
