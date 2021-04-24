@@ -1,8 +1,6 @@
 package book
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"image/jpeg"
 	"io/ioutil"
@@ -13,33 +11,32 @@ import (
 
 	"github.com/gen2brain/go-fitz"
 	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 type BookService interface {
-	NewBookProject(in NewBookRequest)
+	NewBook(in NewBookRequest) (NewBookResponse, error)
 }
 
 type bookService struct {
-	db *sql.DB
+	bookRepo BookRepo
 }
 
-func NewBookService(db *sql.DB) *bookService {
-	return &bookService{db}
+func NewBookService(bookRepo BookRepo) *bookService {
+	return &bookService{bookRepo}
 }
 
-func (bs *bookService) NewBookProject(in NewBookRequest) {
+func (bkSrvc *bookService) NewBook(in NewBookRequest) (res NewBookResponse, err error) {
 
 	defer in.File.Close()
 	fileBytes, err := ioutil.ReadAll(in.File)
 	if err != nil {
-		panic(err)
+		return res, err
 	}
 
 	fileName := fmt.Sprintf("%d.pdf", time.Now().Unix())
 	err = ioutil.WriteFile(fileName, fileBytes, 0755)
 	if err != nil {
-		panic(err)
+		return res, err
 	}
 
 	book := &repo.Book{
@@ -48,10 +45,17 @@ func (bs *bookService) NewBookProject(in NewBookRequest) {
 		Path: fileName,
 	}
 
-	book.Insert(context.Background(), bs.db, boil.Infer())
+	b, err := bkSrvc.bookRepo.NewBook(book)
 	if err != nil {
-		panic(err)
+		return res, err
 	}
+
+	res = NewBookResponse{
+		Name:  b.Name,
+		Notes: b.Note.String,
+	}
+
+	return res, nil
 
 }
 
