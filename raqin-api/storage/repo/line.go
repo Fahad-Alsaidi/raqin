@@ -109,8 +109,8 @@ type lineL struct{}
 
 var (
 	lineAllColumns            = []string{"id", "page_id", "path", "number", "stage", "line_text", "created_at", "updated_at", "deleted_at"}
-	lineColumnsWithoutDefault = []string{"page_id", "path", "number", "stage", "line_text"}
-	lineColumnsWithDefault    = []string{"id", "created_at", "updated_at", "deleted_at"}
+	lineColumnsWithoutDefault = []string{"page_id", "path", "number", "line_text"}
+	lineColumnsWithDefault    = []string{"id", "stage", "created_at", "updated_at", "deleted_at"}
 	linePrimaryKeyColumns     = []string{"id"}
 )
 

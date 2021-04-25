@@ -8,7 +8,6 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/labstack/echo/v4 v4.2.1
-	github.com/lib/pq v1.2.1-0.20191011153232-f91d3411e481
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/volatiletech/null/v8 v8.1.2

@@ -6,19 +6,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// book struct that will implement IBook interface
 type bookController struct {
 	bookservice BookService
 }
 
-// NewBookController return bookController struct with IBook service
-// this method is the entry to this controller
 func NewBookController(bookservice BookService) *bookController {
 	return &bookController{bookservice: bookservice}
 }
 
-// NewBook returns the new created book
-func (b *bookController) UploadNewBook(c echo.Context) error {
+func (bCtrl *bookController) NewBook(c echo.Context) error {
 
 	book := NewBookRequest{}
 	// Source
@@ -37,8 +33,11 @@ func (b *bookController) UploadNewBook(c echo.Context) error {
 		panic(err)
 	}
 
-	b.bookservice.NewBookProject(book)
+	resp, err := bCtrl.bookservice.NewBook(book)
+	if err != nil {
+		return err
+	}
 
-	return c.String(http.StatusOK, "book has been uploaded")
+	return c.JSON(http.StatusOK, resp)
 
 }
