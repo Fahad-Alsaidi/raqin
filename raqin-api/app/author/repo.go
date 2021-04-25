@@ -22,10 +22,19 @@ func NewAuthorRepo(db *sql.DB) *authorRepo {
 
 func (br *authorRepo) NewAuthor(author *repo.Author) (*repo.Author, error) {
 
-	err := author.Insert(context.Background(), br.db, boil.Infer())
+	ctx := context.Background()
+	tx, err := br.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	err = author.Insert(ctx, tx, boil.Infer())
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	tx.Commit()
 
 	return author, nil
 
