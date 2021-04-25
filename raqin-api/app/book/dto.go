@@ -5,8 +5,8 @@ import "io"
 type NewBookRequest struct {
 	Name     string        `form:"name"`
 	Notes    string        `form:"notes"`
-	Category []string      `form:"category"`
-	Authors  []string      `form:"authors"`
+	Category []int         `form:"category"`
+	Authors  []int         `form:"authors"`
 	File     io.ReadCloser `form:"file"`
 }
 

@@ -25,6 +25,7 @@ func NewBookService(bookRepo BookRepo) *bookService {
 	return &bookService{bookRepo}
 }
 
+// NewBook will register book in db and file system and returns NewBookResponse
 func (bkSrvc *bookService) NewBook(in NewBookRequest) (res NewBookResponse, err error) {
 
 	defer in.File.Close()
@@ -34,10 +35,6 @@ func (bkSrvc *bookService) NewBook(in NewBookRequest) (res NewBookResponse, err 
 	}
 
 	fileName := fmt.Sprintf("%d.pdf", time.Now().Unix())
-	err = ioutil.WriteFile(fileName, fileBytes, 0755)
-	if err != nil {
-		return res, err
-	}
 
 	book := &repo.Book{
 		Name: in.Name,
@@ -45,10 +42,20 @@ func (bkSrvc *bookService) NewBook(in NewBookRequest) (res NewBookResponse, err 
 		Path: fileName,
 	}
 
-	b, err := bkSrvc.bookRepo.NewBook(book)
+	// save book in db
+	b, _, err := bkSrvc.bookRepo.NewBook(book, in)
 	if err != nil {
 		return res, err
 	}
+
+	// save the pdf if book is registered in db
+	err = ioutil.WriteFile(fileName, fileBytes, 0755)
+	if err != nil {
+		return res, err
+	}
+
+	// TODO: get the authors of the book to return as response
+	// TODO: get the categories of the book to return as response
 
 	res = NewBookResponse{
 		Name:  b.Name,
