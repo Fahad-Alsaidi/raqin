@@ -8,7 +8,6 @@ import (
 )
 
 func bookRouter(gRoute *echo.Group) {
-	// init NewBookController with NewBookService
 	db := storage.DBInstance()
 	bookCtrl := book.NewBookController(book.NewBookService(book.NewBookRepo(db)))
 

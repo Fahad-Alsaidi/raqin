@@ -8,7 +8,6 @@ import (
 )
 
 func authorRouter(gRoute *echo.Group) {
-	// init NewBookController with NewBookService
 	db := storage.DBInstance()
 	authorCtrl := author.NewAuthorController(author.NewBookService(author.NewAuthorRepo(db)))
 
@@ -16,5 +15,5 @@ func authorRouter(gRoute *echo.Group) {
 	gRoute.DELETE("/delete", authorCtrl.DeleteAuthor)
 	gRoute.PATCH("/update", authorCtrl.UpdateAuthor)
 	gRoute.GET("/all", authorCtrl.AllAuthors)
-	gRoute.GET("/:id", authorCtrl.AuthorByID)
+	gRoute.GET("", authorCtrl.AuthorByID)
 }
