@@ -9,7 +9,7 @@ import (
 
 func authorRouter(gRoute *echo.Group) {
 	db := storage.DBInstance()
-	authorCtrl := author.NewAuthorController(author.NewBookService(author.NewAuthorRepo(db)))
+	authorCtrl := author.NewAuthorController(author.NewAuthorService(author.NewAuthorRepo(db)))
 
 	gRoute.POST("/new", authorCtrl.NewAuthor)
 	gRoute.DELETE("/delete", authorCtrl.DeleteAuthor)
