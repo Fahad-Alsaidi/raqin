@@ -16,7 +16,7 @@ type authorService struct {
 	authorRepo AuthorRepo
 }
 
-func NewBookService(authorRepo AuthorRepo) *authorService {
+func NewAuthorService(authorRepo AuthorRepo) *authorService {
 	return &authorService{authorRepo}
 }
 
