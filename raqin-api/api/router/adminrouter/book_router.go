@@ -9,7 +9,14 @@ import (
 
 func bookRouter(gRoute *echo.Group) {
 	db := storage.DBInstance()
-	bookCtrl := book.NewBookController(book.NewBookService(book.NewBookRepo(db)))
+	bookRepo := book.NewBookRepo(db)
+	bookCtrl := book.NewBookController(book.NewBookService(bookRepo))
 
-	gRoute.POST("/upload", bookCtrl.NewBook)
+	gRoute.POST("/new", bookCtrl.NewBook)
+	gRoute.DELETE("/delete", nil)
+	gRoute.POST("/update", bookCtrl.UpdateBook)
+	gRoute.GET("/all", nil)
+	gRoute.GET("", bookCtrl.BookByID)
+	gRoute.GET("/extract/book", bookCtrl.ExtractBook)
+	gRoute.GET("/extract/page", nil)
 }
