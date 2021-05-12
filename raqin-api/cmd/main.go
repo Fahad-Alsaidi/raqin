@@ -1,21 +1,17 @@
-/*
-
-هنا نقطة البدأ للبرنامج بأكمله
-
-*/
-
 package main
 
 import (
-	rest "raqin-api/api"
+	"raqin-api/api"
+	"raqin-api/app"
 	"raqin-api/storage"
 )
 
 func main() {
 
+	app.Init()
 	err := storage.Connect()
 	if err != nil {
 		panic(err)
 	}
-	rest.Init()
+	api.Init()
 }
