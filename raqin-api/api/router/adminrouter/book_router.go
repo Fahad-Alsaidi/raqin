@@ -13,9 +13,9 @@ func bookRouter(gRoute *echo.Group) {
 	bookCtrl := book.NewBookController(book.NewBookService(bookRepo))
 
 	gRoute.POST("/new", bookCtrl.NewBook)
-	gRoute.DELETE("/delete", nil)
+	gRoute.DELETE("/delete", bookCtrl.DeleteBook)
 	gRoute.POST("/update", bookCtrl.UpdateBook)
-	gRoute.GET("/all", nil)
+	gRoute.GET("/all", bookCtrl.AllBooks)
 	gRoute.GET("", bookCtrl.BookByID)
 	gRoute.GET("/extract/book", bookCtrl.ExtractBook)
 	gRoute.GET("/extract/page", nil)
