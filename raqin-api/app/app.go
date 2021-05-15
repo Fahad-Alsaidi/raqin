@@ -101,7 +101,7 @@ func CreateUserDir(dirname string) (string, error) {
 	return path, nil
 }
 
-func BookPagesToImages(srcFile, destDir string) (int, error) {
+func BookPagesToImages(srcFile, destDir string) (int, []string, error) {
 
 	doc, err := fitz.New(srcFile)
 	if err != nil {
@@ -111,16 +111,19 @@ func BookPagesToImages(srcFile, destDir string) (int, error) {
 	defer doc.Close()
 
 	// Extract pages as images
+	var pages []string
 	for n := 0; n < doc.NumPage(); n++ {
 		img, err := doc.Image(n)
 		if err != nil {
 			panic(err)
 		}
 
-		f, err := os.Create(filepath.Join(destDir, fmt.Sprintf("page_%d.jpg", n)))
+		pageName := fmt.Sprintf("page_%d.jpg", n+1)
+		f, err := os.Create(filepath.Join(destDir, pageName))
 		if err != nil {
 			panic(err)
 		}
+		pages = append(pages, pageName)
 
 		imgOpts := &jpeg.Options{Quality: jpeg.DefaultQuality}
 		err = jpeg.Encode(f, img, imgOpts)
@@ -131,5 +134,5 @@ func BookPagesToImages(srcFile, destDir string) (int, error) {
 		f.Close()
 	}
 
-	return doc.NumPage(), nil
+	return doc.NumPage(), pages, nil
 }
