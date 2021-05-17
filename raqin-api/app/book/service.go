@@ -14,12 +14,18 @@ import (
 )
 
 type BookService interface {
-	NewBook(in NewBookRequest) (NewBookResponse, error)
-	UpdateBook(in UpdateBookRequest) (res NewBookResponse, err error)
-	DeleteBook(in BookIDRequest) error
-	AllBooks() ([]NewBookResponse, error)
-	BookByID(in BookIDRequest) (res NewBookResponse, err error)
-	BookToPages(in BookIDRequest) (res NewBookResponse, err error)
+	NewBook(NewBookRequest) (BookResponse, error)
+	UpdateBook(UpdateBookRequest) (BookResponse, error)
+	DeleteBook(BookIDRequest) error
+	AllBooks() ([]BookResponse, error)
+	BookByID(BookIDRequest) (BookResponse, error)
+	BookToPages(BookIDRequest) (int, error)
+	AddBookAuthor(bkAuthor AddBookRel) error
+	RemoveBookAuthor(bkAuthor RemoveBookRel) error
+	AddBookCategory(bkCategory AddBookRel) error
+	RemoveBookCategory(bkCategory RemoveBookRel) error
+	AddBookInitiator(bkInitiater AddBookRel) error
+	RemoveBookInitiator(bkInitiater RemoveBookRel) error
 }
 
 type bookService struct {
@@ -30,8 +36,8 @@ func NewBookService(bookRepo BookRepo) *bookService {
 	return &bookService{bookRepo}
 }
 
-// NewBook will register book in db and file system and returns NewBookResponse
-func (bkSrvc *bookService) NewBook(in NewBookRequest) (res NewBookResponse, err error) {
+// NewBook will register book in db and file system and returns BookResponse
+func (bkSrvc *bookService) NewBook(in NewBookRequest) (res BookResponse, err error) {
 
 	defer in.File.Close()
 	fileBytes, err := ioutil.ReadAll(in.File)
@@ -72,18 +78,20 @@ func (bkSrvc *bookService) NewBook(in NewBookRequest) (res NewBookResponse, err 
 		return res, err
 	}
 
+	res.ID = b.ID
 	res.Name = b.Name
 	res.Notes = b.Note.String
 
 	return res, nil
 }
 
-func (bkSrvc *bookService) UpdateBook(in UpdateBookRequest) (res NewBookResponse, err error) {
+func (bkSrvc *bookService) UpdateBook(in UpdateBookRequest) (res BookResponse, err error) {
 
 	book := &repo.Book{
-		ID:   in.ID,
-		Name: in.Name,
-		Note: null.StringFrom(in.Notes),
+		ID:        in.ID,
+		Name:      in.Name,
+		UpdatedAt: time.Now(),
+		Note:      null.StringFrom(in.Notes),
 	}
 
 	bk, err := bkSrvc.bookRepo.UpdateBook(book)
@@ -91,19 +99,56 @@ func (bkSrvc *bookService) UpdateBook(in UpdateBookRequest) (res NewBookResponse
 		return res, err
 	}
 
-	res = NewBookResponse{
-		Name:  bk.Name,
-		Notes: bk.Note.String,
+	res, err = bkSrvc.BookRelations(bk.ID)
+	if err != nil {
+		return res, err
 	}
+
+	res.ID = bk.ID
+	res.Name = bk.Name
+	res.Notes = bk.Note.String
 
 	return res, nil
 }
 
-func (bkSrvc *bookService) DeleteBook(in BookIDRequest) error { panic("") }
+func (bkSrvc *bookService) DeleteBook(in BookIDRequest) error {
 
-func (bkSrvc *bookService) AllBooks() ([]NewBookResponse, error) { panic("") }
+	book := &repo.Book{
+		ID:        in.ID,
+		DeletedAt: time.Now(),
+	}
 
-func (bkSrvc *bookService) BookByID(in BookIDRequest) (res NewBookResponse, err error) {
+	n, err := bkSrvc.bookRepo.DeleteBook(book)
+	if err != nil || n == 0 {
+		return err
+	}
+
+	return nil
+}
+
+func (bkSrvc *bookService) AllBooks() ([]BookResponse, error) {
+	books, err := bkSrvc.bookRepo.AllBooks()
+	if err != nil {
+		return nil, err
+	}
+
+	bookResponse := []BookResponse{}
+	for _, bk := range books {
+		res, err := bkSrvc.BookRelations(bk.ID)
+		if err != nil {
+			return nil, err
+		}
+		res.ID = bk.ID
+		res.Name = bk.Name
+		res.Notes = bk.Note.String
+
+		bookResponse = append(bookResponse, res)
+	}
+
+	return bookResponse, nil
+}
+
+func (bkSrvc *bookService) BookByID(in BookIDRequest) (res BookResponse, err error) {
 
 	bk, err := bkSrvc.bookRepo.BookByID(in.ID)
 	if err != nil {
@@ -115,7 +160,8 @@ func (bkSrvc *bookService) BookByID(in BookIDRequest) (res NewBookResponse, err 
 		return res, err
 	}
 
-	res = NewBookResponse{
+	res = BookResponse{
+		ID:       bk.ID,
 		Name:     bk.Name,
 		Notes:    bk.Note.String,
 		Authors:  rels.Authors,
@@ -126,7 +172,7 @@ func (bkSrvc *bookService) BookByID(in BookIDRequest) (res NewBookResponse, err 
 	return res, nil
 }
 
-func (bkSrvc *bookService) BookRelations(id int) (res NewBookResponse, err error) {
+func (bkSrvc *bookService) BookRelations(id int) (res BookResponse, err error) {
 
 	// get the authors of the book to return as response
 	authors := []author.AuthorResponse{}
@@ -175,7 +221,7 @@ func (bkSrvc *bookService) BookRelations(id int) (res NewBookResponse, err error
 		users = append(users, u)
 	}
 
-	res = NewBookResponse{
+	res = BookResponse{
 		Authors:  authors,
 		Category: categories,
 		Users:    users,
@@ -184,7 +230,7 @@ func (bkSrvc *bookService) BookRelations(id int) (res NewBookResponse, err error
 	return res, nil
 }
 
-func (bkSrvc *bookService) BookToPages(in BookIDRequest) (res NewBookResponse, err error) {
+func (bkSrvc *bookService) BookToPages(in BookIDRequest) (res int, err error) {
 
 	bk, err := bkSrvc.bookRepo.BookByID(in.ID)
 	if err != nil {
@@ -203,13 +249,102 @@ func (bkSrvc *bookService) BookToPages(in BookIDRequest) (res NewBookResponse, e
 	}
 
 	srcFile := fmt.Sprintf("%s/%s", dir, bk.Path)
-	_, err = app.BookPagesToImages(srcFile, pagesDir)
-	if err != nil {
+	n, pages, err := app.BookPagesToImages(srcFile, pagesDir)
+	if err != nil || n != len(pages) {
 		return res, err
 	}
 
-	return NewBookResponse{
-		Name:  bk.Name,
-		Notes: bk.Note.String,
-	}, err
+	n, err = bkSrvc.bookRepo.AddBookPages(pages, bk.ID)
+	if err != nil || n != len(pages) {
+		return res, err
+	}
+
+	return n, err
+}
+
+func (bkSrvc *bookService) AddBookAuthor(bkAuthor AddBookRel) error {
+
+	ba := &repo.BookAuthor{
+		BookID:   bkAuthor.BookID,
+		AuthorID: bkAuthor.ID,
+	}
+
+	err := bkSrvc.bookRepo.AddBookAuthor(ba)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bkSrvc *bookService) RemoveBookAuthor(bkAuthor RemoveBookRel) error {
+	ba := &repo.BookAuthor{
+		ID: bkAuthor.ID,
+	}
+
+	_, err := bkSrvc.bookRepo.RemoveBookAuthor(ba)
+	fmt.Println(err)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bkSrvc *bookService) AddBookCategory(bkCategory AddBookRel) error {
+
+	bc := &repo.BookCategory{
+		BookID:     bkCategory.BookID,
+		CategoryID: bkCategory.ID,
+	}
+
+	err := bkSrvc.bookRepo.AddBookCategory(bc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bkSrvc *bookService) RemoveBookCategory(bkCategory RemoveBookRel) error {
+
+	bc := &repo.BookCategory{
+		ID: bkCategory.ID,
+	}
+
+	_, err := bkSrvc.bookRepo.RemoveBookCategory(bc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bkSrvc *bookService) AddBookInitiator(bkInitiater AddBookRel) error {
+
+	bi := &repo.BookInitiater{
+		BookID: bkInitiater.BookID,
+		UserID: bkInitiater.ID,
+	}
+
+	err := bkSrvc.bookRepo.AddBookInitiator(bi)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (bkSrvc *bookService) RemoveBookInitiator(bkInitiater RemoveBookRel) error {
+
+	bi := &repo.BookInitiater{
+		ID: bkInitiater.ID,
+	}
+
+	_, err := bkSrvc.bookRepo.RemoveBookInitiator(bi)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

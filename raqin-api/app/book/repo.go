@@ -18,6 +18,13 @@ type BookRepo interface {
 	BookAuthors(id int) (*repo.AuthorSlice, error)
 	BookCategories(id int) (*repo.CategorySlice, error)
 	BookInitiators(id int) (*repo.UserSlice, error)
+	AddBookPages(pages []string, BookID int) (int, error)
+	AddBookAuthor(bkAuthor *repo.BookAuthor) error
+	RemoveBookAuthor(bkAuthor *repo.BookAuthor) (int64, error)
+	AddBookCategory(bkCategory *repo.BookCategory) error
+	RemoveBookCategory(bkCategory *repo.BookCategory) (int64, error)
+	AddBookInitiator(bkInitiater *repo.BookInitiater) error
+	RemoveBookInitiator(bkInitiater *repo.BookInitiater) (int64, error)
 }
 
 type bookRepo struct {
@@ -94,16 +101,34 @@ func (br *bookRepo) UpdateBook(book *repo.Book) (*repo.Book, error) {
 		return nil, err
 	}
 
-	n, err := book.Update(ctx, tx, boil.Whitelist("name", "note"))
+	n, err := book.Update(ctx, tx, boil.Whitelist("name", "note", "updated_at"))
 	if err != nil || n == 0 {
 		tx.Rollback()
 		return nil, err
 	}
 
+	tx.Commit()
+
 	return book, nil
 }
 
-func (br *bookRepo) AllBooks() (repo.BookSlice, error) { panic("") }
+func (br *bookRepo) AllBooks() (repo.BookSlice, error) {
+	ctx := context.Background()
+	tx, err := br.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	books, err := repo.Books(qm.Where("deleted_at = '0000-00-00 00:00:00'")).All(ctx, tx)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	tx.Commit()
+
+	return books, nil
+}
 
 func (br *bookRepo) BookAuthors(id int) (*repo.AuthorSlice, error) {
 
@@ -211,7 +236,7 @@ func (br *bookRepo) DeleteBook(book *repo.Book) (int64, error) {
 		return 0, err
 	}
 
-	n, err := book.Delete(ctx, tx)
+	n, err := book.Update(ctx, tx, boil.Whitelist("deleted_at"))
 	if err != nil || n == 0 {
 		tx.Rollback()
 		return 0, err
@@ -296,4 +321,68 @@ func (br *bookRepo) RemoveBookCategory(bkCategory *repo.BookCategory) (int64, er
 	tx.Commit()
 
 	return n, nil
+}
+
+func (br *bookRepo) AddBookInitiator(bkInitiater *repo.BookInitiater) error {
+
+	ctx := context.Background()
+	tx, err := br.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	err = bkInitiater.Insert(ctx, tx, boil.Infer())
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (br *bookRepo) RemoveBookInitiator(bkInitiater *repo.BookInitiater) (int64, error) {
+
+	ctx := context.Background()
+	tx, err := br.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	n, err := bkInitiater.Delete(ctx, tx)
+	if err != nil || n == 0 {
+		tx.Rollback()
+		return 0, err
+	}
+
+	tx.Commit()
+
+	return n, nil
+}
+
+func (br *bookRepo) AddBookPages(pages []string, BookID int) (int, error) {
+
+	ctx := context.Background()
+	tx, err := br.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	for i, v := range pages {
+		bkPage := &repo.Page{
+			BookID: BookID,
+			Path:   v,
+			Number: i + 1,
+		}
+		err = bkPage.Insert(ctx, tx, boil.Infer())
+		if err != nil {
+			tx.Rollback()
+			return 0, err
+		}
+	}
+
+	tx.Commit()
+
+	return len(pages), nil
 }

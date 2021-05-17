@@ -21,7 +21,8 @@ type NewBookRequest struct {
 	Initiators []int         `form:"initiators"`
 	File       io.ReadCloser `form:"file"`
 }
-type NewBookResponse struct {
+type BookResponse struct {
+	ID       int                         `json:"id"`
 	Name     string                      `json:"name"`
 	Notes    string                      `json:"notes"`
 	Category []category.CategoryResponse `json:"categories"`
@@ -30,5 +31,14 @@ type NewBookResponse struct {
 }
 
 type BookIDRequest struct {
+	ID int `query:"id"`
+}
+
+type AddBookRel struct {
+	ID     int `query:"id"`
+	BookID int `query:"book_id"`
+}
+
+type RemoveBookRel struct {
 	ID int `query:"id"`
 }
