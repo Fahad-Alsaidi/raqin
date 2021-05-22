@@ -728,6 +728,162 @@ func testUserToManyReviewerLineRevisions(t *testing.T) {
 	}
 }
 
+func testUserToManyCommenterLineRevisionComments(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c LineRevisionComment
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, lineRevisionCommentDBTypes, false, lineRevisionCommentColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, lineRevisionCommentDBTypes, false, lineRevisionCommentColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.CommenterID = a.ID
+	c.CommenterID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.CommenterLineRevisionComments().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.CommenterID == b.CommenterID {
+			bFound = true
+		}
+		if v.CommenterID == c.CommenterID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := UserSlice{&a}
+	if err = a.L.LoadCommenterLineRevisionComments(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CommenterLineRevisionComments); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.CommenterLineRevisionComments = nil
+	if err = a.L.LoadCommenterLineRevisionComments(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CommenterLineRevisionComments); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testUserToManyReactorLineRevisionReactions(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c LineRevisionReaction
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, lineRevisionReactionDBTypes, false, lineRevisionReactionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, lineRevisionReactionDBTypes, false, lineRevisionReactionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ReactorID = a.ID
+	c.ReactorID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.ReactorLineRevisionReactions().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ReactorID == b.ReactorID {
+			bFound = true
+		}
+		if v.ReactorID == c.ReactorID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := UserSlice{&a}
+	if err = a.L.LoadReactorLineRevisionReactions(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ReactorLineRevisionReactions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ReactorLineRevisionReactions = nil
+	if err = a.L.LoadReactorLineRevisionReactions(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ReactorLineRevisionReactions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testUserToManyReviewerPageRevisions(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -798,6 +954,162 @@ func testUserToManyReviewerPageRevisions(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := len(a.R.ReviewerPageRevisions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testUserToManyCommenterPageRevisionComments(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c PageRevisionComment
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, pageRevisionCommentDBTypes, false, pageRevisionCommentColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, pageRevisionCommentDBTypes, false, pageRevisionCommentColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.CommenterID = a.ID
+	c.CommenterID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.CommenterPageRevisionComments().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.CommenterID == b.CommenterID {
+			bFound = true
+		}
+		if v.CommenterID == c.CommenterID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := UserSlice{&a}
+	if err = a.L.LoadCommenterPageRevisionComments(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CommenterPageRevisionComments); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.CommenterPageRevisionComments = nil
+	if err = a.L.LoadCommenterPageRevisionComments(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CommenterPageRevisionComments); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testUserToManyReactorPageRevisionReactions(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c PageRevisionReaction
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, pageRevisionReactionDBTypes, false, pageRevisionReactionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, pageRevisionReactionDBTypes, false, pageRevisionReactionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ReactorID = a.ID
+	c.ReactorID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.ReactorPageRevisionReactions().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ReactorID == b.ReactorID {
+			bFound = true
+		}
+		if v.ReactorID == c.ReactorID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := UserSlice{&a}
+	if err = a.L.LoadReactorPageRevisionReactions(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ReactorPageRevisionReactions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ReactorPageRevisionReactions = nil
+	if err = a.L.LoadReactorPageRevisionReactions(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ReactorPageRevisionReactions); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -1031,6 +1343,156 @@ func testUserToManyAddOpReviewerLineRevisions(t *testing.T) {
 		}
 	}
 }
+func testUserToManyAddOpCommenterLineRevisionComments(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c, d, e LineRevisionComment
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*LineRevisionComment{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, lineRevisionCommentDBTypes, false, strmangle.SetComplement(lineRevisionCommentPrimaryKeyColumns, lineRevisionCommentColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*LineRevisionComment{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddCommenterLineRevisionComments(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.CommenterID {
+			t.Error("foreign key was wrong value", a.ID, first.CommenterID)
+		}
+		if a.ID != second.CommenterID {
+			t.Error("foreign key was wrong value", a.ID, second.CommenterID)
+		}
+
+		if first.R.Commenter != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Commenter != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.CommenterLineRevisionComments[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.CommenterLineRevisionComments[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.CommenterLineRevisionComments().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testUserToManyAddOpReactorLineRevisionReactions(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c, d, e LineRevisionReaction
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*LineRevisionReaction{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, lineRevisionReactionDBTypes, false, strmangle.SetComplement(lineRevisionReactionPrimaryKeyColumns, lineRevisionReactionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*LineRevisionReaction{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddReactorLineRevisionReactions(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ReactorID {
+			t.Error("foreign key was wrong value", a.ID, first.ReactorID)
+		}
+		if a.ID != second.ReactorID {
+			t.Error("foreign key was wrong value", a.ID, second.ReactorID)
+		}
+
+		if first.R.Reactor != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Reactor != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.ReactorLineRevisionReactions[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ReactorLineRevisionReactions[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ReactorLineRevisionReactions().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testUserToManyAddOpReviewerPageRevisions(t *testing.T) {
 	var err error
 
@@ -1098,6 +1560,156 @@ func testUserToManyAddOpReviewerPageRevisions(t *testing.T) {
 		}
 
 		count, err := a.ReviewerPageRevisions().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testUserToManyAddOpCommenterPageRevisionComments(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c, d, e PageRevisionComment
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PageRevisionComment{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, pageRevisionCommentDBTypes, false, strmangle.SetComplement(pageRevisionCommentPrimaryKeyColumns, pageRevisionCommentColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*PageRevisionComment{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddCommenterPageRevisionComments(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.CommenterID {
+			t.Error("foreign key was wrong value", a.ID, first.CommenterID)
+		}
+		if a.ID != second.CommenterID {
+			t.Error("foreign key was wrong value", a.ID, second.CommenterID)
+		}
+
+		if first.R.Commenter != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Commenter != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.CommenterPageRevisionComments[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.CommenterPageRevisionComments[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.CommenterPageRevisionComments().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testUserToManyAddOpReactorPageRevisionReactions(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c, d, e PageRevisionReaction
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PageRevisionReaction{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, pageRevisionReactionDBTypes, false, strmangle.SetComplement(pageRevisionReactionPrimaryKeyColumns, pageRevisionReactionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*PageRevisionReaction{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddReactorPageRevisionReactions(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ReactorID {
+			t.Error("foreign key was wrong value", a.ID, first.ReactorID)
+		}
+		if a.ID != second.ReactorID {
+			t.Error("foreign key was wrong value", a.ID, second.ReactorID)
+		}
+
+		if first.R.Reactor != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Reactor != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.ReactorPageRevisionReactions[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ReactorPageRevisionReactions[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ReactorPageRevisionReactions().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

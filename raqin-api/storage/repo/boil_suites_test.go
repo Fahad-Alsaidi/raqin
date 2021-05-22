@@ -21,8 +21,12 @@ func TestParent(t *testing.T) {
 	t.Run("Categories", testCategories)
 	t.Run("Lines", testLines)
 	t.Run("LineRevisions", testLineRevisions)
+	t.Run("LineRevisionComments", testLineRevisionComments)
+	t.Run("LineRevisionReactions", testLineRevisionReactions)
 	t.Run("Pages", testPages)
 	t.Run("PageRevisions", testPageRevisions)
+	t.Run("PageRevisionComments", testPageRevisionComments)
+	t.Run("PageRevisionReactions", testPageRevisionReactions)
 	t.Run("Users", testUsers)
 }
 
@@ -36,8 +40,12 @@ func TestDelete(t *testing.T) {
 	t.Run("Categories", testCategoriesDelete)
 	t.Run("Lines", testLinesDelete)
 	t.Run("LineRevisions", testLineRevisionsDelete)
+	t.Run("LineRevisionComments", testLineRevisionCommentsDelete)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsDelete)
 	t.Run("Pages", testPagesDelete)
 	t.Run("PageRevisions", testPageRevisionsDelete)
+	t.Run("PageRevisionComments", testPageRevisionCommentsDelete)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsDelete)
 	t.Run("Users", testUsersDelete)
 }
 
@@ -51,8 +59,12 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Categories", testCategoriesQueryDeleteAll)
 	t.Run("Lines", testLinesQueryDeleteAll)
 	t.Run("LineRevisions", testLineRevisionsQueryDeleteAll)
+	t.Run("LineRevisionComments", testLineRevisionCommentsQueryDeleteAll)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsQueryDeleteAll)
 	t.Run("Pages", testPagesQueryDeleteAll)
 	t.Run("PageRevisions", testPageRevisionsQueryDeleteAll)
+	t.Run("PageRevisionComments", testPageRevisionCommentsQueryDeleteAll)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsQueryDeleteAll)
 	t.Run("Users", testUsersQueryDeleteAll)
 }
 
@@ -66,8 +78,12 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Categories", testCategoriesSliceDeleteAll)
 	t.Run("Lines", testLinesSliceDeleteAll)
 	t.Run("LineRevisions", testLineRevisionsSliceDeleteAll)
+	t.Run("LineRevisionComments", testLineRevisionCommentsSliceDeleteAll)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsSliceDeleteAll)
 	t.Run("Pages", testPagesSliceDeleteAll)
 	t.Run("PageRevisions", testPageRevisionsSliceDeleteAll)
+	t.Run("PageRevisionComments", testPageRevisionCommentsSliceDeleteAll)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsSliceDeleteAll)
 	t.Run("Users", testUsersSliceDeleteAll)
 }
 
@@ -81,8 +97,12 @@ func TestExists(t *testing.T) {
 	t.Run("Categories", testCategoriesExists)
 	t.Run("Lines", testLinesExists)
 	t.Run("LineRevisions", testLineRevisionsExists)
+	t.Run("LineRevisionComments", testLineRevisionCommentsExists)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsExists)
 	t.Run("Pages", testPagesExists)
 	t.Run("PageRevisions", testPageRevisionsExists)
+	t.Run("PageRevisionComments", testPageRevisionCommentsExists)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsExists)
 	t.Run("Users", testUsersExists)
 }
 
@@ -96,8 +116,12 @@ func TestFind(t *testing.T) {
 	t.Run("Categories", testCategoriesFind)
 	t.Run("Lines", testLinesFind)
 	t.Run("LineRevisions", testLineRevisionsFind)
+	t.Run("LineRevisionComments", testLineRevisionCommentsFind)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsFind)
 	t.Run("Pages", testPagesFind)
 	t.Run("PageRevisions", testPageRevisionsFind)
+	t.Run("PageRevisionComments", testPageRevisionCommentsFind)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsFind)
 	t.Run("Users", testUsersFind)
 }
 
@@ -111,8 +135,12 @@ func TestBind(t *testing.T) {
 	t.Run("Categories", testCategoriesBind)
 	t.Run("Lines", testLinesBind)
 	t.Run("LineRevisions", testLineRevisionsBind)
+	t.Run("LineRevisionComments", testLineRevisionCommentsBind)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsBind)
 	t.Run("Pages", testPagesBind)
 	t.Run("PageRevisions", testPageRevisionsBind)
+	t.Run("PageRevisionComments", testPageRevisionCommentsBind)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsBind)
 	t.Run("Users", testUsersBind)
 }
 
@@ -126,8 +154,12 @@ func TestOne(t *testing.T) {
 	t.Run("Categories", testCategoriesOne)
 	t.Run("Lines", testLinesOne)
 	t.Run("LineRevisions", testLineRevisionsOne)
+	t.Run("LineRevisionComments", testLineRevisionCommentsOne)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsOne)
 	t.Run("Pages", testPagesOne)
 	t.Run("PageRevisions", testPageRevisionsOne)
+	t.Run("PageRevisionComments", testPageRevisionCommentsOne)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsOne)
 	t.Run("Users", testUsersOne)
 }
 
@@ -141,8 +173,12 @@ func TestAll(t *testing.T) {
 	t.Run("Categories", testCategoriesAll)
 	t.Run("Lines", testLinesAll)
 	t.Run("LineRevisions", testLineRevisionsAll)
+	t.Run("LineRevisionComments", testLineRevisionCommentsAll)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsAll)
 	t.Run("Pages", testPagesAll)
 	t.Run("PageRevisions", testPageRevisionsAll)
+	t.Run("PageRevisionComments", testPageRevisionCommentsAll)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsAll)
 	t.Run("Users", testUsersAll)
 }
 
@@ -156,8 +192,12 @@ func TestCount(t *testing.T) {
 	t.Run("Categories", testCategoriesCount)
 	t.Run("Lines", testLinesCount)
 	t.Run("LineRevisions", testLineRevisionsCount)
+	t.Run("LineRevisionComments", testLineRevisionCommentsCount)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsCount)
 	t.Run("Pages", testPagesCount)
 	t.Run("PageRevisions", testPageRevisionsCount)
+	t.Run("PageRevisionComments", testPageRevisionCommentsCount)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsCount)
 	t.Run("Users", testUsersCount)
 }
 
@@ -171,8 +211,12 @@ func TestHooks(t *testing.T) {
 	t.Run("Categories", testCategoriesHooks)
 	t.Run("Lines", testLinesHooks)
 	t.Run("LineRevisions", testLineRevisionsHooks)
+	t.Run("LineRevisionComments", testLineRevisionCommentsHooks)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsHooks)
 	t.Run("Pages", testPagesHooks)
 	t.Run("PageRevisions", testPageRevisionsHooks)
+	t.Run("PageRevisionComments", testPageRevisionCommentsHooks)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsHooks)
 	t.Run("Users", testUsersHooks)
 }
 
@@ -195,10 +239,18 @@ func TestInsert(t *testing.T) {
 	t.Run("Lines", testLinesInsertWhitelist)
 	t.Run("LineRevisions", testLineRevisionsInsert)
 	t.Run("LineRevisions", testLineRevisionsInsertWhitelist)
+	t.Run("LineRevisionComments", testLineRevisionCommentsInsert)
+	t.Run("LineRevisionComments", testLineRevisionCommentsInsertWhitelist)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsInsert)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsInsertWhitelist)
 	t.Run("Pages", testPagesInsert)
 	t.Run("Pages", testPagesInsertWhitelist)
 	t.Run("PageRevisions", testPageRevisionsInsert)
 	t.Run("PageRevisions", testPageRevisionsInsertWhitelist)
+	t.Run("PageRevisionComments", testPageRevisionCommentsInsert)
+	t.Run("PageRevisionComments", testPageRevisionCommentsInsertWhitelist)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsInsert)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsInsertWhitelist)
 	t.Run("Users", testUsersInsert)
 	t.Run("Users", testUsersInsertWhitelist)
 }
@@ -214,11 +266,21 @@ func TestToOne(t *testing.T) {
 	t.Run("BookInitiaterToUserUsingUser", testBookInitiaterToOneUserUsingUser)
 	t.Run("BookInitiaterToBookUsingBook", testBookInitiaterToOneBookUsingBook)
 	t.Run("LineToPageUsingPage", testLineToOnePageUsingPage)
+	t.Run("LineToLineRevisionUsingApprovedRevisionLineRevision", testLineToOneLineRevisionUsingApprovedRevisionLineRevision)
 	t.Run("LineRevisionToUserUsingReviewer", testLineRevisionToOneUserUsingReviewer)
 	t.Run("LineRevisionToLineUsingLine", testLineRevisionToOneLineUsingLine)
+	t.Run("LineRevisionCommentToLineRevisionUsingLineRevision", testLineRevisionCommentToOneLineRevisionUsingLineRevision)
+	t.Run("LineRevisionCommentToUserUsingCommenter", testLineRevisionCommentToOneUserUsingCommenter)
+	t.Run("LineRevisionReactionToLineRevisionUsingLineRevision", testLineRevisionReactionToOneLineRevisionUsingLineRevision)
+	t.Run("LineRevisionReactionToUserUsingReactor", testLineRevisionReactionToOneUserUsingReactor)
 	t.Run("PageToBookUsingBook", testPageToOneBookUsingBook)
+	t.Run("PageToPageRevisionUsingApprovedRevisionPageRevision", testPageToOnePageRevisionUsingApprovedRevisionPageRevision)
 	t.Run("PageRevisionToUserUsingReviewer", testPageRevisionToOneUserUsingReviewer)
 	t.Run("PageRevisionToPageUsingPage", testPageRevisionToOnePageUsingPage)
+	t.Run("PageRevisionCommentToPageRevisionUsingPageRevision", testPageRevisionCommentToOnePageRevisionUsingPageRevision)
+	t.Run("PageRevisionCommentToUserUsingCommenter", testPageRevisionCommentToOneUserUsingCommenter)
+	t.Run("PageRevisionReactionToPageRevisionUsingPageRevision", testPageRevisionReactionToOnePageRevisionUsingPageRevision)
+	t.Run("PageRevisionReactionToUserUsingReactor", testPageRevisionReactionToOneUserUsingReactor)
 }
 
 // TestOneToOne tests cannot be run in parallel
@@ -235,12 +297,22 @@ func TestToMany(t *testing.T) {
 	t.Run("BookToPages", testBookToManyPages)
 	t.Run("CategoryToBookCategories", testCategoryToManyBookCategories)
 	t.Run("LineToLineRevisions", testLineToManyLineRevisions)
+	t.Run("LineRevisionToApprovedRevisionLines", testLineRevisionToManyApprovedRevisionLines)
+	t.Run("LineRevisionToLineRevisionComments", testLineRevisionToManyLineRevisionComments)
+	t.Run("LineRevisionToLineRevisionReactions", testLineRevisionToManyLineRevisionReactions)
 	t.Run("PageToLines", testPageToManyLines)
 	t.Run("PageToPageRevisions", testPageToManyPageRevisions)
+	t.Run("PageRevisionToApprovedRevisionPages", testPageRevisionToManyApprovedRevisionPages)
+	t.Run("PageRevisionToPageRevisionComments", testPageRevisionToManyPageRevisionComments)
+	t.Run("PageRevisionToPageRevisionReactions", testPageRevisionToManyPageRevisionReactions)
 	t.Run("UserToActivities", testUserToManyActivities)
 	t.Run("UserToBookInitiaters", testUserToManyBookInitiaters)
 	t.Run("UserToReviewerLineRevisions", testUserToManyReviewerLineRevisions)
+	t.Run("UserToCommenterLineRevisionComments", testUserToManyCommenterLineRevisionComments)
+	t.Run("UserToReactorLineRevisionReactions", testUserToManyReactorLineRevisionReactions)
 	t.Run("UserToReviewerPageRevisions", testUserToManyReviewerPageRevisions)
+	t.Run("UserToCommenterPageRevisionComments", testUserToManyCommenterPageRevisionComments)
+	t.Run("UserToReactorPageRevisionReactions", testUserToManyReactorPageRevisionReactions)
 }
 
 // TestToOneSet tests cannot be run in parallel
@@ -254,16 +326,29 @@ func TestToOneSet(t *testing.T) {
 	t.Run("BookInitiaterToUserUsingBookInitiaters", testBookInitiaterToOneSetOpUserUsingUser)
 	t.Run("BookInitiaterToBookUsingBookInitiaters", testBookInitiaterToOneSetOpBookUsingBook)
 	t.Run("LineToPageUsingLines", testLineToOneSetOpPageUsingPage)
+	t.Run("LineToLineRevisionUsingApprovedRevisionLines", testLineToOneSetOpLineRevisionUsingApprovedRevisionLineRevision)
 	t.Run("LineRevisionToUserUsingReviewerLineRevisions", testLineRevisionToOneSetOpUserUsingReviewer)
 	t.Run("LineRevisionToLineUsingLineRevisions", testLineRevisionToOneSetOpLineUsingLine)
+	t.Run("LineRevisionCommentToLineRevisionUsingLineRevisionComments", testLineRevisionCommentToOneSetOpLineRevisionUsingLineRevision)
+	t.Run("LineRevisionCommentToUserUsingCommenterLineRevisionComments", testLineRevisionCommentToOneSetOpUserUsingCommenter)
+	t.Run("LineRevisionReactionToLineRevisionUsingLineRevisionReactions", testLineRevisionReactionToOneSetOpLineRevisionUsingLineRevision)
+	t.Run("LineRevisionReactionToUserUsingReactorLineRevisionReactions", testLineRevisionReactionToOneSetOpUserUsingReactor)
 	t.Run("PageToBookUsingPages", testPageToOneSetOpBookUsingBook)
+	t.Run("PageToPageRevisionUsingApprovedRevisionPages", testPageToOneSetOpPageRevisionUsingApprovedRevisionPageRevision)
 	t.Run("PageRevisionToUserUsingReviewerPageRevisions", testPageRevisionToOneSetOpUserUsingReviewer)
 	t.Run("PageRevisionToPageUsingPageRevisions", testPageRevisionToOneSetOpPageUsingPage)
+	t.Run("PageRevisionCommentToPageRevisionUsingPageRevisionComments", testPageRevisionCommentToOneSetOpPageRevisionUsingPageRevision)
+	t.Run("PageRevisionCommentToUserUsingCommenterPageRevisionComments", testPageRevisionCommentToOneSetOpUserUsingCommenter)
+	t.Run("PageRevisionReactionToPageRevisionUsingPageRevisionReactions", testPageRevisionReactionToOneSetOpPageRevisionUsingPageRevision)
+	t.Run("PageRevisionReactionToUserUsingReactorPageRevisionReactions", testPageRevisionReactionToOneSetOpUserUsingReactor)
 }
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToOneRemove(t *testing.T) {}
+func TestToOneRemove(t *testing.T) {
+	t.Run("LineToLineRevisionUsingApprovedRevisionLines", testLineToOneRemoveOpLineRevisionUsingApprovedRevisionLineRevision)
+	t.Run("PageToPageRevisionUsingApprovedRevisionPages", testPageToOneRemoveOpPageRevisionUsingApprovedRevisionPageRevision)
+}
 
 // TestOneToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
@@ -283,21 +368,37 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("BookToPages", testBookToManyAddOpPages)
 	t.Run("CategoryToBookCategories", testCategoryToManyAddOpBookCategories)
 	t.Run("LineToLineRevisions", testLineToManyAddOpLineRevisions)
+	t.Run("LineRevisionToApprovedRevisionLines", testLineRevisionToManyAddOpApprovedRevisionLines)
+	t.Run("LineRevisionToLineRevisionComments", testLineRevisionToManyAddOpLineRevisionComments)
+	t.Run("LineRevisionToLineRevisionReactions", testLineRevisionToManyAddOpLineRevisionReactions)
 	t.Run("PageToLines", testPageToManyAddOpLines)
 	t.Run("PageToPageRevisions", testPageToManyAddOpPageRevisions)
+	t.Run("PageRevisionToApprovedRevisionPages", testPageRevisionToManyAddOpApprovedRevisionPages)
+	t.Run("PageRevisionToPageRevisionComments", testPageRevisionToManyAddOpPageRevisionComments)
+	t.Run("PageRevisionToPageRevisionReactions", testPageRevisionToManyAddOpPageRevisionReactions)
 	t.Run("UserToActivities", testUserToManyAddOpActivities)
 	t.Run("UserToBookInitiaters", testUserToManyAddOpBookInitiaters)
 	t.Run("UserToReviewerLineRevisions", testUserToManyAddOpReviewerLineRevisions)
+	t.Run("UserToCommenterLineRevisionComments", testUserToManyAddOpCommenterLineRevisionComments)
+	t.Run("UserToReactorLineRevisionReactions", testUserToManyAddOpReactorLineRevisionReactions)
 	t.Run("UserToReviewerPageRevisions", testUserToManyAddOpReviewerPageRevisions)
+	t.Run("UserToCommenterPageRevisionComments", testUserToManyAddOpCommenterPageRevisionComments)
+	t.Run("UserToReactorPageRevisionReactions", testUserToManyAddOpReactorPageRevisionReactions)
 }
 
 // TestToManySet tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToManySet(t *testing.T) {}
+func TestToManySet(t *testing.T) {
+	t.Run("LineRevisionToApprovedRevisionLines", testLineRevisionToManySetOpApprovedRevisionLines)
+	t.Run("PageRevisionToApprovedRevisionPages", testPageRevisionToManySetOpApprovedRevisionPages)
+}
 
 // TestToManyRemove tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToManyRemove(t *testing.T) {}
+func TestToManyRemove(t *testing.T) {
+	t.Run("LineRevisionToApprovedRevisionLines", testLineRevisionToManyRemoveOpApprovedRevisionLines)
+	t.Run("PageRevisionToApprovedRevisionPages", testPageRevisionToManyRemoveOpApprovedRevisionPages)
+}
 
 func TestReload(t *testing.T) {
 	t.Run("Activities", testActivitiesReload)
@@ -309,8 +410,12 @@ func TestReload(t *testing.T) {
 	t.Run("Categories", testCategoriesReload)
 	t.Run("Lines", testLinesReload)
 	t.Run("LineRevisions", testLineRevisionsReload)
+	t.Run("LineRevisionComments", testLineRevisionCommentsReload)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsReload)
 	t.Run("Pages", testPagesReload)
 	t.Run("PageRevisions", testPageRevisionsReload)
+	t.Run("PageRevisionComments", testPageRevisionCommentsReload)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsReload)
 	t.Run("Users", testUsersReload)
 }
 
@@ -324,8 +429,12 @@ func TestReloadAll(t *testing.T) {
 	t.Run("Categories", testCategoriesReloadAll)
 	t.Run("Lines", testLinesReloadAll)
 	t.Run("LineRevisions", testLineRevisionsReloadAll)
+	t.Run("LineRevisionComments", testLineRevisionCommentsReloadAll)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsReloadAll)
 	t.Run("Pages", testPagesReloadAll)
 	t.Run("PageRevisions", testPageRevisionsReloadAll)
+	t.Run("PageRevisionComments", testPageRevisionCommentsReloadAll)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsReloadAll)
 	t.Run("Users", testUsersReloadAll)
 }
 
@@ -339,8 +448,12 @@ func TestSelect(t *testing.T) {
 	t.Run("Categories", testCategoriesSelect)
 	t.Run("Lines", testLinesSelect)
 	t.Run("LineRevisions", testLineRevisionsSelect)
+	t.Run("LineRevisionComments", testLineRevisionCommentsSelect)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsSelect)
 	t.Run("Pages", testPagesSelect)
 	t.Run("PageRevisions", testPageRevisionsSelect)
+	t.Run("PageRevisionComments", testPageRevisionCommentsSelect)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsSelect)
 	t.Run("Users", testUsersSelect)
 }
 
@@ -354,8 +467,12 @@ func TestUpdate(t *testing.T) {
 	t.Run("Categories", testCategoriesUpdate)
 	t.Run("Lines", testLinesUpdate)
 	t.Run("LineRevisions", testLineRevisionsUpdate)
+	t.Run("LineRevisionComments", testLineRevisionCommentsUpdate)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsUpdate)
 	t.Run("Pages", testPagesUpdate)
 	t.Run("PageRevisions", testPageRevisionsUpdate)
+	t.Run("PageRevisionComments", testPageRevisionCommentsUpdate)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsUpdate)
 	t.Run("Users", testUsersUpdate)
 }
 
@@ -369,7 +486,11 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Categories", testCategoriesSliceUpdateAll)
 	t.Run("Lines", testLinesSliceUpdateAll)
 	t.Run("LineRevisions", testLineRevisionsSliceUpdateAll)
+	t.Run("LineRevisionComments", testLineRevisionCommentsSliceUpdateAll)
+	t.Run("LineRevisionReactions", testLineRevisionReactionsSliceUpdateAll)
 	t.Run("Pages", testPagesSliceUpdateAll)
 	t.Run("PageRevisions", testPageRevisionsSliceUpdateAll)
+	t.Run("PageRevisionComments", testPageRevisionCommentsSliceUpdateAll)
+	t.Run("PageRevisionReactions", testPageRevisionReactionsSliceUpdateAll)
 	t.Run("Users", testUsersSliceUpdateAll)
 }

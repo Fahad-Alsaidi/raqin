@@ -76,17 +76,26 @@ var PageRevisionWhere = struct {
 
 // PageRevisionRels is where relationship names are stored.
 var PageRevisionRels = struct {
-	Reviewer string
-	Page     string
+	Reviewer              string
+	Page                  string
+	ApprovedRevisionPages string
+	PageRevisionComments  string
+	PageRevisionReactions string
 }{
-	Reviewer: "Reviewer",
-	Page:     "Page",
+	Reviewer:              "Reviewer",
+	Page:                  "Page",
+	ApprovedRevisionPages: "ApprovedRevisionPages",
+	PageRevisionComments:  "PageRevisionComments",
+	PageRevisionReactions: "PageRevisionReactions",
 }
 
 // pageRevisionR is where relationships are stored.
 type pageRevisionR struct {
-	Reviewer *User `boil:"Reviewer" json:"Reviewer" toml:"Reviewer" yaml:"Reviewer"`
-	Page     *Page `boil:"Page" json:"Page" toml:"Page" yaml:"Page"`
+	Reviewer              *User                     `boil:"Reviewer" json:"Reviewer" toml:"Reviewer" yaml:"Reviewer"`
+	Page                  *Page                     `boil:"Page" json:"Page" toml:"Page" yaml:"Page"`
+	ApprovedRevisionPages PageSlice                 `boil:"ApprovedRevisionPages" json:"ApprovedRevisionPages" toml:"ApprovedRevisionPages" yaml:"ApprovedRevisionPages"`
+	PageRevisionComments  PageRevisionCommentSlice  `boil:"PageRevisionComments" json:"PageRevisionComments" toml:"PageRevisionComments" yaml:"PageRevisionComments"`
+	PageRevisionReactions PageRevisionReactionSlice `boil:"PageRevisionReactions" json:"PageRevisionReactions" toml:"PageRevisionReactions" yaml:"PageRevisionReactions"`
 }
 
 // NewStruct creates a new relationship struct
@@ -407,6 +416,69 @@ func (o *PageRevision) Page(mods ...qm.QueryMod) pageQuery {
 	return query
 }
 
+// ApprovedRevisionPages retrieves all the page's Pages with an executor via approved_revision column.
+func (o *PageRevision) ApprovedRevisionPages(mods ...qm.QueryMod) pageQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`page`.`approved_revision`=?", o.ID),
+	)
+
+	query := Pages(queryMods...)
+	queries.SetFrom(query.Query, "`page`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`page`.*"})
+	}
+
+	return query
+}
+
+// PageRevisionComments retrieves all the page_revision_comment's PageRevisionComments with an executor.
+func (o *PageRevision) PageRevisionComments(mods ...qm.QueryMod) pageRevisionCommentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`page_revision_comment`.`page_revision_id`=?", o.ID),
+	)
+
+	query := PageRevisionComments(queryMods...)
+	queries.SetFrom(query.Query, "`page_revision_comment`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`page_revision_comment`.*"})
+	}
+
+	return query
+}
+
+// PageRevisionReactions retrieves all the page_revision_reaction's PageRevisionReactions with an executor.
+func (o *PageRevision) PageRevisionReactions(mods ...qm.QueryMod) pageRevisionReactionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`page_revision_reaction`.`page_revision_id`=?", o.ID),
+	)
+
+	query := PageRevisionReactions(queryMods...)
+	queries.SetFrom(query.Query, "`page_revision_reaction`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`page_revision_reaction`.*"})
+	}
+
+	return query
+}
+
 // LoadReviewer allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (pageRevisionL) LoadReviewer(ctx context.Context, e boil.ContextExecutor, singular bool, maybePageRevision interface{}, mods queries.Applicator) error {
@@ -615,6 +687,300 @@ func (pageRevisionL) LoadPage(ctx context.Context, e boil.ContextExecutor, singu
 	return nil
 }
 
+// LoadApprovedRevisionPages allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (pageRevisionL) LoadApprovedRevisionPages(ctx context.Context, e boil.ContextExecutor, singular bool, maybePageRevision interface{}, mods queries.Applicator) error {
+	var slice []*PageRevision
+	var object *PageRevision
+
+	if singular {
+		object = maybePageRevision.(*PageRevision)
+	} else {
+		slice = *maybePageRevision.(*[]*PageRevision)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &pageRevisionR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &pageRevisionR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`page`),
+		qm.WhereIn(`page.approved_revision in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load page")
+	}
+
+	var resultSlice []*Page
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice page")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on page")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page")
+	}
+
+	if len(pageAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ApprovedRevisionPages = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &pageR{}
+			}
+			foreign.R.ApprovedRevisionPageRevision = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ApprovedRevision) {
+				local.R.ApprovedRevisionPages = append(local.R.ApprovedRevisionPages, foreign)
+				if foreign.R == nil {
+					foreign.R = &pageR{}
+				}
+				foreign.R.ApprovedRevisionPageRevision = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadPageRevisionComments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (pageRevisionL) LoadPageRevisionComments(ctx context.Context, e boil.ContextExecutor, singular bool, maybePageRevision interface{}, mods queries.Applicator) error {
+	var slice []*PageRevision
+	var object *PageRevision
+
+	if singular {
+		object = maybePageRevision.(*PageRevision)
+	} else {
+		slice = *maybePageRevision.(*[]*PageRevision)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &pageRevisionR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &pageRevisionR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`page_revision_comment`),
+		qm.WhereIn(`page_revision_comment.page_revision_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load page_revision_comment")
+	}
+
+	var resultSlice []*PageRevisionComment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice page_revision_comment")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on page_revision_comment")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page_revision_comment")
+	}
+
+	if len(pageRevisionCommentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.PageRevisionComments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &pageRevisionCommentR{}
+			}
+			foreign.R.PageRevision = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.PageRevisionID {
+				local.R.PageRevisionComments = append(local.R.PageRevisionComments, foreign)
+				if foreign.R == nil {
+					foreign.R = &pageRevisionCommentR{}
+				}
+				foreign.R.PageRevision = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadPageRevisionReactions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (pageRevisionL) LoadPageRevisionReactions(ctx context.Context, e boil.ContextExecutor, singular bool, maybePageRevision interface{}, mods queries.Applicator) error {
+	var slice []*PageRevision
+	var object *PageRevision
+
+	if singular {
+		object = maybePageRevision.(*PageRevision)
+	} else {
+		slice = *maybePageRevision.(*[]*PageRevision)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &pageRevisionR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &pageRevisionR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`page_revision_reaction`),
+		qm.WhereIn(`page_revision_reaction.page_revision_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load page_revision_reaction")
+	}
+
+	var resultSlice []*PageRevisionReaction
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice page_revision_reaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on page_revision_reaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page_revision_reaction")
+	}
+
+	if len(pageRevisionReactionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.PageRevisionReactions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &pageRevisionReactionR{}
+			}
+			foreign.R.PageRevision = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.PageRevisionID {
+				local.R.PageRevisionReactions = append(local.R.PageRevisionReactions, foreign)
+				if foreign.R == nil {
+					foreign.R = &pageRevisionReactionR{}
+				}
+				foreign.R.PageRevision = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetReviewer of the pageRevision to the related item.
 // Sets o.R.Reviewer to related.
 // Adds o to related.R.ReviewerPageRevisions.
@@ -706,6 +1072,235 @@ func (o *PageRevision) SetPage(ctx context.Context, exec boil.ContextExecutor, i
 		related.R.PageRevisions = append(related.R.PageRevisions, o)
 	}
 
+	return nil
+}
+
+// AddApprovedRevisionPages adds the given related objects to the existing relationships
+// of the page_revision, optionally inserting them as new records.
+// Appends related to o.R.ApprovedRevisionPages.
+// Sets related.R.ApprovedRevisionPageRevision appropriately.
+func (o *PageRevision) AddApprovedRevisionPages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Page) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ApprovedRevision, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `page` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"approved_revision"}),
+				strmangle.WhereClause("`", "`", 0, pagePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ApprovedRevision, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &pageRevisionR{
+			ApprovedRevisionPages: related,
+		}
+	} else {
+		o.R.ApprovedRevisionPages = append(o.R.ApprovedRevisionPages, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &pageR{
+				ApprovedRevisionPageRevision: o,
+			}
+		} else {
+			rel.R.ApprovedRevisionPageRevision = o
+		}
+	}
+	return nil
+}
+
+// SetApprovedRevisionPages removes all previously related items of the
+// page_revision replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ApprovedRevisionPageRevision's ApprovedRevisionPages accordingly.
+// Replaces o.R.ApprovedRevisionPages with related.
+// Sets related.R.ApprovedRevisionPageRevision's ApprovedRevisionPages accordingly.
+func (o *PageRevision) SetApprovedRevisionPages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Page) error {
+	query := "update `page` set `approved_revision` = null where `approved_revision` = ?"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ApprovedRevisionPages {
+			queries.SetScanner(&rel.ApprovedRevision, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ApprovedRevisionPageRevision = nil
+		}
+
+		o.R.ApprovedRevisionPages = nil
+	}
+	return o.AddApprovedRevisionPages(ctx, exec, insert, related...)
+}
+
+// RemoveApprovedRevisionPages relationships from objects passed in.
+// Removes related items from R.ApprovedRevisionPages (uses pointer comparison, removal does not keep order)
+// Sets related.R.ApprovedRevisionPageRevision.
+func (o *PageRevision) RemoveApprovedRevisionPages(ctx context.Context, exec boil.ContextExecutor, related ...*Page) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ApprovedRevision, nil)
+		if rel.R != nil {
+			rel.R.ApprovedRevisionPageRevision = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("approved_revision")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ApprovedRevisionPages {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ApprovedRevisionPages)
+			if ln > 1 && i < ln-1 {
+				o.R.ApprovedRevisionPages[i] = o.R.ApprovedRevisionPages[ln-1]
+			}
+			o.R.ApprovedRevisionPages = o.R.ApprovedRevisionPages[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddPageRevisionComments adds the given related objects to the existing relationships
+// of the page_revision, optionally inserting them as new records.
+// Appends related to o.R.PageRevisionComments.
+// Sets related.R.PageRevision appropriately.
+func (o *PageRevision) AddPageRevisionComments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PageRevisionComment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.PageRevisionID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `page_revision_comment` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"page_revision_id"}),
+				strmangle.WhereClause("`", "`", 0, pageRevisionCommentPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.PageRevisionID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &pageRevisionR{
+			PageRevisionComments: related,
+		}
+	} else {
+		o.R.PageRevisionComments = append(o.R.PageRevisionComments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &pageRevisionCommentR{
+				PageRevision: o,
+			}
+		} else {
+			rel.R.PageRevision = o
+		}
+	}
+	return nil
+}
+
+// AddPageRevisionReactions adds the given related objects to the existing relationships
+// of the page_revision, optionally inserting them as new records.
+// Appends related to o.R.PageRevisionReactions.
+// Sets related.R.PageRevision appropriately.
+func (o *PageRevision) AddPageRevisionReactions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PageRevisionReaction) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.PageRevisionID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `page_revision_reaction` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"page_revision_id"}),
+				strmangle.WhereClause("`", "`", 0, pageRevisionReactionPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.PageRevisionID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &pageRevisionR{
+			PageRevisionReactions: related,
+		}
+	} else {
+		o.R.PageRevisionReactions = append(o.R.PageRevisionReactions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &pageRevisionReactionR{
+				PageRevision: o,
+			}
+		} else {
+			rel.R.PageRevision = o
+		}
+	}
 	return nil
 }
 

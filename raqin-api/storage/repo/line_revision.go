@@ -76,17 +76,26 @@ var LineRevisionWhere = struct {
 
 // LineRevisionRels is where relationship names are stored.
 var LineRevisionRels = struct {
-	Reviewer string
-	Line     string
+	Reviewer              string
+	Line                  string
+	ApprovedRevisionLines string
+	LineRevisionComments  string
+	LineRevisionReactions string
 }{
-	Reviewer: "Reviewer",
-	Line:     "Line",
+	Reviewer:              "Reviewer",
+	Line:                  "Line",
+	ApprovedRevisionLines: "ApprovedRevisionLines",
+	LineRevisionComments:  "LineRevisionComments",
+	LineRevisionReactions: "LineRevisionReactions",
 }
 
 // lineRevisionR is where relationships are stored.
 type lineRevisionR struct {
-	Reviewer *User `boil:"Reviewer" json:"Reviewer" toml:"Reviewer" yaml:"Reviewer"`
-	Line     *Line `boil:"Line" json:"Line" toml:"Line" yaml:"Line"`
+	Reviewer              *User                     `boil:"Reviewer" json:"Reviewer" toml:"Reviewer" yaml:"Reviewer"`
+	Line                  *Line                     `boil:"Line" json:"Line" toml:"Line" yaml:"Line"`
+	ApprovedRevisionLines LineSlice                 `boil:"ApprovedRevisionLines" json:"ApprovedRevisionLines" toml:"ApprovedRevisionLines" yaml:"ApprovedRevisionLines"`
+	LineRevisionComments  LineRevisionCommentSlice  `boil:"LineRevisionComments" json:"LineRevisionComments" toml:"LineRevisionComments" yaml:"LineRevisionComments"`
+	LineRevisionReactions LineRevisionReactionSlice `boil:"LineRevisionReactions" json:"LineRevisionReactions" toml:"LineRevisionReactions" yaml:"LineRevisionReactions"`
 }
 
 // NewStruct creates a new relationship struct
@@ -407,6 +416,69 @@ func (o *LineRevision) Line(mods ...qm.QueryMod) lineQuery {
 	return query
 }
 
+// ApprovedRevisionLines retrieves all the line's Lines with an executor via approved_revision column.
+func (o *LineRevision) ApprovedRevisionLines(mods ...qm.QueryMod) lineQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`line`.`approved_revision`=?", o.ID),
+	)
+
+	query := Lines(queryMods...)
+	queries.SetFrom(query.Query, "`line`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`line`.*"})
+	}
+
+	return query
+}
+
+// LineRevisionComments retrieves all the line_revision_comment's LineRevisionComments with an executor.
+func (o *LineRevision) LineRevisionComments(mods ...qm.QueryMod) lineRevisionCommentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`line_revision_comment`.`line_revision_id`=?", o.ID),
+	)
+
+	query := LineRevisionComments(queryMods...)
+	queries.SetFrom(query.Query, "`line_revision_comment`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`line_revision_comment`.*"})
+	}
+
+	return query
+}
+
+// LineRevisionReactions retrieves all the line_revision_reaction's LineRevisionReactions with an executor.
+func (o *LineRevision) LineRevisionReactions(mods ...qm.QueryMod) lineRevisionReactionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`line_revision_reaction`.`line_revision_id`=?", o.ID),
+	)
+
+	query := LineRevisionReactions(queryMods...)
+	queries.SetFrom(query.Query, "`line_revision_reaction`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`line_revision_reaction`.*"})
+	}
+
+	return query
+}
+
 // LoadReviewer allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (lineRevisionL) LoadReviewer(ctx context.Context, e boil.ContextExecutor, singular bool, maybeLineRevision interface{}, mods queries.Applicator) error {
@@ -615,6 +687,300 @@ func (lineRevisionL) LoadLine(ctx context.Context, e boil.ContextExecutor, singu
 	return nil
 }
 
+// LoadApprovedRevisionLines allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (lineRevisionL) LoadApprovedRevisionLines(ctx context.Context, e boil.ContextExecutor, singular bool, maybeLineRevision interface{}, mods queries.Applicator) error {
+	var slice []*LineRevision
+	var object *LineRevision
+
+	if singular {
+		object = maybeLineRevision.(*LineRevision)
+	} else {
+		slice = *maybeLineRevision.(*[]*LineRevision)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &lineRevisionR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &lineRevisionR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`line`),
+		qm.WhereIn(`line.approved_revision in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load line")
+	}
+
+	var resultSlice []*Line
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice line")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on line")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line")
+	}
+
+	if len(lineAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ApprovedRevisionLines = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &lineR{}
+			}
+			foreign.R.ApprovedRevisionLineRevision = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ApprovedRevision) {
+				local.R.ApprovedRevisionLines = append(local.R.ApprovedRevisionLines, foreign)
+				if foreign.R == nil {
+					foreign.R = &lineR{}
+				}
+				foreign.R.ApprovedRevisionLineRevision = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadLineRevisionComments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (lineRevisionL) LoadLineRevisionComments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeLineRevision interface{}, mods queries.Applicator) error {
+	var slice []*LineRevision
+	var object *LineRevision
+
+	if singular {
+		object = maybeLineRevision.(*LineRevision)
+	} else {
+		slice = *maybeLineRevision.(*[]*LineRevision)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &lineRevisionR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &lineRevisionR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`line_revision_comment`),
+		qm.WhereIn(`line_revision_comment.line_revision_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load line_revision_comment")
+	}
+
+	var resultSlice []*LineRevisionComment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice line_revision_comment")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on line_revision_comment")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line_revision_comment")
+	}
+
+	if len(lineRevisionCommentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.LineRevisionComments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &lineRevisionCommentR{}
+			}
+			foreign.R.LineRevision = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.LineRevisionID {
+				local.R.LineRevisionComments = append(local.R.LineRevisionComments, foreign)
+				if foreign.R == nil {
+					foreign.R = &lineRevisionCommentR{}
+				}
+				foreign.R.LineRevision = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadLineRevisionReactions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (lineRevisionL) LoadLineRevisionReactions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeLineRevision interface{}, mods queries.Applicator) error {
+	var slice []*LineRevision
+	var object *LineRevision
+
+	if singular {
+		object = maybeLineRevision.(*LineRevision)
+	} else {
+		slice = *maybeLineRevision.(*[]*LineRevision)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &lineRevisionR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &lineRevisionR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`line_revision_reaction`),
+		qm.WhereIn(`line_revision_reaction.line_revision_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load line_revision_reaction")
+	}
+
+	var resultSlice []*LineRevisionReaction
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice line_revision_reaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on line_revision_reaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line_revision_reaction")
+	}
+
+	if len(lineRevisionReactionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.LineRevisionReactions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &lineRevisionReactionR{}
+			}
+			foreign.R.LineRevision = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.LineRevisionID {
+				local.R.LineRevisionReactions = append(local.R.LineRevisionReactions, foreign)
+				if foreign.R == nil {
+					foreign.R = &lineRevisionReactionR{}
+				}
+				foreign.R.LineRevision = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetReviewer of the lineRevision to the related item.
 // Sets o.R.Reviewer to related.
 // Adds o to related.R.ReviewerLineRevisions.
@@ -706,6 +1072,235 @@ func (o *LineRevision) SetLine(ctx context.Context, exec boil.ContextExecutor, i
 		related.R.LineRevisions = append(related.R.LineRevisions, o)
 	}
 
+	return nil
+}
+
+// AddApprovedRevisionLines adds the given related objects to the existing relationships
+// of the line_revision, optionally inserting them as new records.
+// Appends related to o.R.ApprovedRevisionLines.
+// Sets related.R.ApprovedRevisionLineRevision appropriately.
+func (o *LineRevision) AddApprovedRevisionLines(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Line) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ApprovedRevision, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `line` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"approved_revision"}),
+				strmangle.WhereClause("`", "`", 0, linePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ApprovedRevision, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &lineRevisionR{
+			ApprovedRevisionLines: related,
+		}
+	} else {
+		o.R.ApprovedRevisionLines = append(o.R.ApprovedRevisionLines, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &lineR{
+				ApprovedRevisionLineRevision: o,
+			}
+		} else {
+			rel.R.ApprovedRevisionLineRevision = o
+		}
+	}
+	return nil
+}
+
+// SetApprovedRevisionLines removes all previously related items of the
+// line_revision replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ApprovedRevisionLineRevision's ApprovedRevisionLines accordingly.
+// Replaces o.R.ApprovedRevisionLines with related.
+// Sets related.R.ApprovedRevisionLineRevision's ApprovedRevisionLines accordingly.
+func (o *LineRevision) SetApprovedRevisionLines(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Line) error {
+	query := "update `line` set `approved_revision` = null where `approved_revision` = ?"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ApprovedRevisionLines {
+			queries.SetScanner(&rel.ApprovedRevision, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ApprovedRevisionLineRevision = nil
+		}
+
+		o.R.ApprovedRevisionLines = nil
+	}
+	return o.AddApprovedRevisionLines(ctx, exec, insert, related...)
+}
+
+// RemoveApprovedRevisionLines relationships from objects passed in.
+// Removes related items from R.ApprovedRevisionLines (uses pointer comparison, removal does not keep order)
+// Sets related.R.ApprovedRevisionLineRevision.
+func (o *LineRevision) RemoveApprovedRevisionLines(ctx context.Context, exec boil.ContextExecutor, related ...*Line) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ApprovedRevision, nil)
+		if rel.R != nil {
+			rel.R.ApprovedRevisionLineRevision = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("approved_revision")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ApprovedRevisionLines {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ApprovedRevisionLines)
+			if ln > 1 && i < ln-1 {
+				o.R.ApprovedRevisionLines[i] = o.R.ApprovedRevisionLines[ln-1]
+			}
+			o.R.ApprovedRevisionLines = o.R.ApprovedRevisionLines[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddLineRevisionComments adds the given related objects to the existing relationships
+// of the line_revision, optionally inserting them as new records.
+// Appends related to o.R.LineRevisionComments.
+// Sets related.R.LineRevision appropriately.
+func (o *LineRevision) AddLineRevisionComments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*LineRevisionComment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.LineRevisionID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `line_revision_comment` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"line_revision_id"}),
+				strmangle.WhereClause("`", "`", 0, lineRevisionCommentPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.LineRevisionID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &lineRevisionR{
+			LineRevisionComments: related,
+		}
+	} else {
+		o.R.LineRevisionComments = append(o.R.LineRevisionComments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &lineRevisionCommentR{
+				LineRevision: o,
+			}
+		} else {
+			rel.R.LineRevision = o
+		}
+	}
+	return nil
+}
+
+// AddLineRevisionReactions adds the given related objects to the existing relationships
+// of the line_revision, optionally inserting them as new records.
+// Appends related to o.R.LineRevisionReactions.
+// Sets related.R.LineRevision appropriately.
+func (o *LineRevision) AddLineRevisionReactions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*LineRevisionReaction) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.LineRevisionID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `line_revision_reaction` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"line_revision_id"}),
+				strmangle.WhereClause("`", "`", 0, lineRevisionReactionPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.LineRevisionID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &lineRevisionR{
+			LineRevisionReactions: related,
+		}
+	} else {
+		o.R.LineRevisionReactions = append(o.R.LineRevisionReactions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &lineRevisionReactionR{
+				LineRevision: o,
+			}
+		} else {
+			rel.R.LineRevision = o
+		}
+	}
 	return nil
 }
 

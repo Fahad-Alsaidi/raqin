@@ -91,23 +91,35 @@ var UserWhere = struct {
 
 // UserRels is where relationship names are stored.
 var UserRels = struct {
-	Activities            string
-	BookInitiaters        string
-	ReviewerLineRevisions string
-	ReviewerPageRevisions string
+	Activities                    string
+	BookInitiaters                string
+	ReviewerLineRevisions         string
+	CommenterLineRevisionComments string
+	ReactorLineRevisionReactions  string
+	ReviewerPageRevisions         string
+	CommenterPageRevisionComments string
+	ReactorPageRevisionReactions  string
 }{
-	Activities:            "Activities",
-	BookInitiaters:        "BookInitiaters",
-	ReviewerLineRevisions: "ReviewerLineRevisions",
-	ReviewerPageRevisions: "ReviewerPageRevisions",
+	Activities:                    "Activities",
+	BookInitiaters:                "BookInitiaters",
+	ReviewerLineRevisions:         "ReviewerLineRevisions",
+	CommenterLineRevisionComments: "CommenterLineRevisionComments",
+	ReactorLineRevisionReactions:  "ReactorLineRevisionReactions",
+	ReviewerPageRevisions:         "ReviewerPageRevisions",
+	CommenterPageRevisionComments: "CommenterPageRevisionComments",
+	ReactorPageRevisionReactions:  "ReactorPageRevisionReactions",
 }
 
 // userR is where relationships are stored.
 type userR struct {
-	Activities            ActivitySlice      `boil:"Activities" json:"Activities" toml:"Activities" yaml:"Activities"`
-	BookInitiaters        BookInitiaterSlice `boil:"BookInitiaters" json:"BookInitiaters" toml:"BookInitiaters" yaml:"BookInitiaters"`
-	ReviewerLineRevisions LineRevisionSlice  `boil:"ReviewerLineRevisions" json:"ReviewerLineRevisions" toml:"ReviewerLineRevisions" yaml:"ReviewerLineRevisions"`
-	ReviewerPageRevisions PageRevisionSlice  `boil:"ReviewerPageRevisions" json:"ReviewerPageRevisions" toml:"ReviewerPageRevisions" yaml:"ReviewerPageRevisions"`
+	Activities                    ActivitySlice             `boil:"Activities" json:"Activities" toml:"Activities" yaml:"Activities"`
+	BookInitiaters                BookInitiaterSlice        `boil:"BookInitiaters" json:"BookInitiaters" toml:"BookInitiaters" yaml:"BookInitiaters"`
+	ReviewerLineRevisions         LineRevisionSlice         `boil:"ReviewerLineRevisions" json:"ReviewerLineRevisions" toml:"ReviewerLineRevisions" yaml:"ReviewerLineRevisions"`
+	CommenterLineRevisionComments LineRevisionCommentSlice  `boil:"CommenterLineRevisionComments" json:"CommenterLineRevisionComments" toml:"CommenterLineRevisionComments" yaml:"CommenterLineRevisionComments"`
+	ReactorLineRevisionReactions  LineRevisionReactionSlice `boil:"ReactorLineRevisionReactions" json:"ReactorLineRevisionReactions" toml:"ReactorLineRevisionReactions" yaml:"ReactorLineRevisionReactions"`
+	ReviewerPageRevisions         PageRevisionSlice         `boil:"ReviewerPageRevisions" json:"ReviewerPageRevisions" toml:"ReviewerPageRevisions" yaml:"ReviewerPageRevisions"`
+	CommenterPageRevisionComments PageRevisionCommentSlice  `boil:"CommenterPageRevisionComments" json:"CommenterPageRevisionComments" toml:"CommenterPageRevisionComments" yaml:"CommenterPageRevisionComments"`
+	ReactorPageRevisionReactions  PageRevisionReactionSlice `boil:"ReactorPageRevisionReactions" json:"ReactorPageRevisionReactions" toml:"ReactorPageRevisionReactions" yaml:"ReactorPageRevisionReactions"`
 }
 
 // NewStruct creates a new relationship struct
@@ -463,6 +475,48 @@ func (o *User) ReviewerLineRevisions(mods ...qm.QueryMod) lineRevisionQuery {
 	return query
 }
 
+// CommenterLineRevisionComments retrieves all the line_revision_comment's LineRevisionComments with an executor via commenter_id column.
+func (o *User) CommenterLineRevisionComments(mods ...qm.QueryMod) lineRevisionCommentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`line_revision_comment`.`commenter_id`=?", o.ID),
+	)
+
+	query := LineRevisionComments(queryMods...)
+	queries.SetFrom(query.Query, "`line_revision_comment`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`line_revision_comment`.*"})
+	}
+
+	return query
+}
+
+// ReactorLineRevisionReactions retrieves all the line_revision_reaction's LineRevisionReactions with an executor via reactor_id column.
+func (o *User) ReactorLineRevisionReactions(mods ...qm.QueryMod) lineRevisionReactionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`line_revision_reaction`.`reactor_id`=?", o.ID),
+	)
+
+	query := LineRevisionReactions(queryMods...)
+	queries.SetFrom(query.Query, "`line_revision_reaction`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`line_revision_reaction`.*"})
+	}
+
+	return query
+}
+
 // ReviewerPageRevisions retrieves all the page_revision's PageRevisions with an executor via reviewer_id column.
 func (o *User) ReviewerPageRevisions(mods ...qm.QueryMod) pageRevisionQuery {
 	var queryMods []qm.QueryMod
@@ -479,6 +533,48 @@ func (o *User) ReviewerPageRevisions(mods ...qm.QueryMod) pageRevisionQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"`page_revision`.*"})
+	}
+
+	return query
+}
+
+// CommenterPageRevisionComments retrieves all the page_revision_comment's PageRevisionComments with an executor via commenter_id column.
+func (o *User) CommenterPageRevisionComments(mods ...qm.QueryMod) pageRevisionCommentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`page_revision_comment`.`commenter_id`=?", o.ID),
+	)
+
+	query := PageRevisionComments(queryMods...)
+	queries.SetFrom(query.Query, "`page_revision_comment`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`page_revision_comment`.*"})
+	}
+
+	return query
+}
+
+// ReactorPageRevisionReactions retrieves all the page_revision_reaction's PageRevisionReactions with an executor via reactor_id column.
+func (o *User) ReactorPageRevisionReactions(mods ...qm.QueryMod) pageRevisionReactionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`page_revision_reaction`.`reactor_id`=?", o.ID),
+	)
+
+	query := PageRevisionReactions(queryMods...)
+	queries.SetFrom(query.Query, "`page_revision_reaction`")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"`page_revision_reaction`.*"})
 	}
 
 	return query
@@ -778,6 +874,202 @@ func (userL) LoadReviewerLineRevisions(ctx context.Context, e boil.ContextExecut
 	return nil
 }
 
+// LoadCommenterLineRevisionComments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadCommenterLineRevisionComments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`line_revision_comment`),
+		qm.WhereIn(`line_revision_comment.commenter_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load line_revision_comment")
+	}
+
+	var resultSlice []*LineRevisionComment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice line_revision_comment")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on line_revision_comment")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line_revision_comment")
+	}
+
+	if len(lineRevisionCommentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.CommenterLineRevisionComments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &lineRevisionCommentR{}
+			}
+			foreign.R.Commenter = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.CommenterID {
+				local.R.CommenterLineRevisionComments = append(local.R.CommenterLineRevisionComments, foreign)
+				if foreign.R == nil {
+					foreign.R = &lineRevisionCommentR{}
+				}
+				foreign.R.Commenter = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadReactorLineRevisionReactions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadReactorLineRevisionReactions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`line_revision_reaction`),
+		qm.WhereIn(`line_revision_reaction.reactor_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load line_revision_reaction")
+	}
+
+	var resultSlice []*LineRevisionReaction
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice line_revision_reaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on line_revision_reaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line_revision_reaction")
+	}
+
+	if len(lineRevisionReactionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ReactorLineRevisionReactions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &lineRevisionReactionR{}
+			}
+			foreign.R.Reactor = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.ReactorID {
+				local.R.ReactorLineRevisionReactions = append(local.R.ReactorLineRevisionReactions, foreign)
+				if foreign.R == nil {
+					foreign.R = &lineRevisionReactionR{}
+				}
+				foreign.R.Reactor = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadReviewerPageRevisions allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (userL) LoadReviewerPageRevisions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
@@ -868,6 +1160,202 @@ func (userL) LoadReviewerPageRevisions(ctx context.Context, e boil.ContextExecut
 					foreign.R = &pageRevisionR{}
 				}
 				foreign.R.Reviewer = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadCommenterPageRevisionComments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadCommenterPageRevisionComments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`page_revision_comment`),
+		qm.WhereIn(`page_revision_comment.commenter_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load page_revision_comment")
+	}
+
+	var resultSlice []*PageRevisionComment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice page_revision_comment")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on page_revision_comment")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page_revision_comment")
+	}
+
+	if len(pageRevisionCommentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.CommenterPageRevisionComments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &pageRevisionCommentR{}
+			}
+			foreign.R.Commenter = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.CommenterID {
+				local.R.CommenterPageRevisionComments = append(local.R.CommenterPageRevisionComments, foreign)
+				if foreign.R == nil {
+					foreign.R = &pageRevisionCommentR{}
+				}
+				foreign.R.Commenter = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadReactorPageRevisionReactions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadReactorPageRevisionReactions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		object = maybeUser.(*User)
+	} else {
+		slice = *maybeUser.(*[]*User)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`page_revision_reaction`),
+		qm.WhereIn(`page_revision_reaction.reactor_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load page_revision_reaction")
+	}
+
+	var resultSlice []*PageRevisionReaction
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice page_revision_reaction")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on page_revision_reaction")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page_revision_reaction")
+	}
+
+	if len(pageRevisionReactionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ReactorPageRevisionReactions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &pageRevisionReactionR{}
+			}
+			foreign.R.Reactor = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.ReactorID {
+				local.R.ReactorPageRevisionReactions = append(local.R.ReactorPageRevisionReactions, foreign)
+				if foreign.R == nil {
+					foreign.R = &pageRevisionReactionR{}
+				}
+				foreign.R.Reactor = local
 				break
 			}
 		}
@@ -1035,6 +1523,112 @@ func (o *User) AddReviewerLineRevisions(ctx context.Context, exec boil.ContextEx
 	return nil
 }
 
+// AddCommenterLineRevisionComments adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.CommenterLineRevisionComments.
+// Sets related.R.Commenter appropriately.
+func (o *User) AddCommenterLineRevisionComments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*LineRevisionComment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.CommenterID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `line_revision_comment` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"commenter_id"}),
+				strmangle.WhereClause("`", "`", 0, lineRevisionCommentPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.CommenterID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			CommenterLineRevisionComments: related,
+		}
+	} else {
+		o.R.CommenterLineRevisionComments = append(o.R.CommenterLineRevisionComments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &lineRevisionCommentR{
+				Commenter: o,
+			}
+		} else {
+			rel.R.Commenter = o
+		}
+	}
+	return nil
+}
+
+// AddReactorLineRevisionReactions adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.ReactorLineRevisionReactions.
+// Sets related.R.Reactor appropriately.
+func (o *User) AddReactorLineRevisionReactions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*LineRevisionReaction) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.ReactorID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `line_revision_reaction` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"reactor_id"}),
+				strmangle.WhereClause("`", "`", 0, lineRevisionReactionPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.ReactorID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			ReactorLineRevisionReactions: related,
+		}
+	} else {
+		o.R.ReactorLineRevisionReactions = append(o.R.ReactorLineRevisionReactions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &lineRevisionReactionR{
+				Reactor: o,
+			}
+		} else {
+			rel.R.Reactor = o
+		}
+	}
+	return nil
+}
+
 // AddReviewerPageRevisions adds the given related objects to the existing relationships
 // of the user, optionally inserting them as new records.
 // Appends related to o.R.ReviewerPageRevisions.
@@ -1083,6 +1677,112 @@ func (o *User) AddReviewerPageRevisions(ctx context.Context, exec boil.ContextEx
 			}
 		} else {
 			rel.R.Reviewer = o
+		}
+	}
+	return nil
+}
+
+// AddCommenterPageRevisionComments adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.CommenterPageRevisionComments.
+// Sets related.R.Commenter appropriately.
+func (o *User) AddCommenterPageRevisionComments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PageRevisionComment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.CommenterID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `page_revision_comment` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"commenter_id"}),
+				strmangle.WhereClause("`", "`", 0, pageRevisionCommentPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.CommenterID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			CommenterPageRevisionComments: related,
+		}
+	} else {
+		o.R.CommenterPageRevisionComments = append(o.R.CommenterPageRevisionComments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &pageRevisionCommentR{
+				Commenter: o,
+			}
+		} else {
+			rel.R.Commenter = o
+		}
+	}
+	return nil
+}
+
+// AddReactorPageRevisionReactions adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.ReactorPageRevisionReactions.
+// Sets related.R.Reactor appropriately.
+func (o *User) AddReactorPageRevisionReactions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PageRevisionReaction) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.ReactorID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `page_revision_reaction` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"reactor_id"}),
+				strmangle.WhereClause("`", "`", 0, pageRevisionReactionPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.ReactorID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			ReactorPageRevisionReactions: related,
+		}
+	} else {
+		o.R.ReactorPageRevisionReactions = append(o.R.ReactorPageRevisionReactions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &pageRevisionReactionR{
+				Reactor: o,
+			}
+		} else {
+			rel.R.Reactor = o
 		}
 	}
 	return nil

@@ -76,6 +76,13 @@ const (
 	LineStageDONE = "DONE"
 )
 
+// Enum values for line_revision_reaction.reaction
+const (
+	LineRevisionReactionReactionNONE       = "NONE"
+	LineRevisionReactionReactionAPPROVE    = "APPROVE"
+	LineRevisionReactionReactionDISAPPROVE = "DISAPPROVE"
+)
+
 // Enum values for page.stage
 const (
 	PageStageNONE = "NONE"
@@ -83,6 +90,13 @@ const (
 	PageStageREV1 = "REV1"
 	PageStageREV2 = "REV2"
 	PageStageDONE = "DONE"
+)
+
+// Enum values for page_revision_reaction.reaction
+const (
+	PageRevisionReactionReactionNONE       = "NONE"
+	PageRevisionReactionReactionAPPROVE    = "APPROVE"
+	PageRevisionReactionReactionDISAPPROVE = "DISAPPROVE"
 )
 
 // Enum values for user.role

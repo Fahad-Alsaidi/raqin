@@ -851,6 +851,57 @@ func testPageToOneBookUsingBook(t *testing.T) {
 	}
 }
 
+func testPageToOnePageRevisionUsingApprovedRevisionPageRevision(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local Page
+	var foreign PageRevision
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, pageDBTypes, true, pageColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Page struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, pageRevisionDBTypes, false, pageRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize PageRevision struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.ApprovedRevision, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.ApprovedRevisionPageRevision().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := PageSlice{&local}
+	if err = local.L.LoadApprovedRevisionPageRevision(ctx, tx, false, (*[]*Page)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.ApprovedRevisionPageRevision == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.ApprovedRevisionPageRevision = nil
+	if err = local.L.LoadApprovedRevisionPageRevision(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.ApprovedRevisionPageRevision == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
 func testPageToOneSetOpBookUsingBook(t *testing.T) {
 	var err error
 
@@ -906,6 +957,114 @@ func testPageToOneSetOpBookUsingBook(t *testing.T) {
 		if a.BookID != x.ID {
 			t.Error("foreign key was wrong value", a.BookID, x.ID)
 		}
+	}
+}
+func testPageToOneSetOpPageRevisionUsingApprovedRevisionPageRevision(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Page
+	var b, c PageRevision
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*PageRevision{&b, &c} {
+		err = a.SetApprovedRevisionPageRevision(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.ApprovedRevisionPageRevision != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.ApprovedRevisionPages[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.ApprovedRevision, x.ID) {
+			t.Error("foreign key was wrong value", a.ApprovedRevision)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.ApprovedRevision))
+		reflect.Indirect(reflect.ValueOf(&a.ApprovedRevision)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.ApprovedRevision, x.ID) {
+			t.Error("foreign key was wrong value", a.ApprovedRevision, x.ID)
+		}
+	}
+}
+
+func testPageToOneRemoveOpPageRevisionUsingApprovedRevisionPageRevision(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Page
+	var b PageRevision
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetApprovedRevisionPageRevision(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveApprovedRevisionPageRevision(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.ApprovedRevisionPageRevision().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.ApprovedRevisionPageRevision != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.ApprovedRevision) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.ApprovedRevisionPages) != 0 {
+		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -983,7 +1142,7 @@ func testPagesSelect(t *testing.T) {
 }
 
 var (
-	pageDBTypes = map[string]string{`ID`: `int`, `BookID`: `int`, `Path`: `varchar`, `Number`: `int`, `Stage`: `enum('NONE','INIT','REV1','REV2','DONE')`, `PageText`: `text`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
+	pageDBTypes = map[string]string{`ID`: `int`, `BookID`: `int`, `Path`: `varchar`, `Number`: `int`, `Stage`: `enum('NONE','INIT','REV1','REV2','DONE')`, `ApprovedRevision`: `int`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_           = bytes.MinRead
 )
 

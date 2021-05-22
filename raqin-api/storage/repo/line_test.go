@@ -698,6 +698,57 @@ func testLineToOnePageUsingPage(t *testing.T) {
 	}
 }
 
+func testLineToOneLineRevisionUsingApprovedRevisionLineRevision(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local Line
+	var foreign LineRevision
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, lineDBTypes, true, lineColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Line struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, lineRevisionDBTypes, false, lineRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize LineRevision struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.ApprovedRevision, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.ApprovedRevisionLineRevision().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := LineSlice{&local}
+	if err = local.L.LoadApprovedRevisionLineRevision(ctx, tx, false, (*[]*Line)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.ApprovedRevisionLineRevision == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.ApprovedRevisionLineRevision = nil
+	if err = local.L.LoadApprovedRevisionLineRevision(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.ApprovedRevisionLineRevision == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
 func testLineToOneSetOpPageUsingPage(t *testing.T) {
 	var err error
 
@@ -753,6 +804,114 @@ func testLineToOneSetOpPageUsingPage(t *testing.T) {
 		if a.PageID != x.ID {
 			t.Error("foreign key was wrong value", a.PageID, x.ID)
 		}
+	}
+}
+func testLineToOneSetOpLineRevisionUsingApprovedRevisionLineRevision(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Line
+	var b, c LineRevision
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*LineRevision{&b, &c} {
+		err = a.SetApprovedRevisionLineRevision(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.ApprovedRevisionLineRevision != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.ApprovedRevisionLines[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.ApprovedRevision, x.ID) {
+			t.Error("foreign key was wrong value", a.ApprovedRevision)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.ApprovedRevision))
+		reflect.Indirect(reflect.ValueOf(&a.ApprovedRevision)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.ApprovedRevision, x.ID) {
+			t.Error("foreign key was wrong value", a.ApprovedRevision, x.ID)
+		}
+	}
+}
+
+func testLineToOneRemoveOpLineRevisionUsingApprovedRevisionLineRevision(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Line
+	var b LineRevision
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetApprovedRevisionLineRevision(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveApprovedRevisionLineRevision(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.ApprovedRevisionLineRevision().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.ApprovedRevisionLineRevision != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.ApprovedRevision) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.ApprovedRevisionLines) != 0 {
+		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -830,7 +989,7 @@ func testLinesSelect(t *testing.T) {
 }
 
 var (
-	lineDBTypes = map[string]string{`ID`: `int`, `PageID`: `int`, `Path`: `varchar`, `Number`: `int`, `Stage`: `enum('NONE','INIT','REV1','REV2','DONE')`, `LineText`: `text`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
+	lineDBTypes = map[string]string{`ID`: `int`, `PageID`: `int`, `Path`: `varchar`, `Number`: `int`, `Stage`: `enum('NONE','INIT','REV1','REV2','DONE')`, `ApprovedRevision`: `int`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_           = bytes.MinRead
 )
 

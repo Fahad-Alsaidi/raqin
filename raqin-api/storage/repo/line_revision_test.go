@@ -494,6 +494,640 @@ func testLineRevisionsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testLineRevisionToManyApprovedRevisionLines(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c Line
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, true, lineRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize LineRevision struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, lineDBTypes, false, lineColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, lineDBTypes, false, lineColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.ApprovedRevision, a.ID)
+	queries.Assign(&c.ApprovedRevision, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.ApprovedRevisionLines().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.ApprovedRevision, b.ApprovedRevision) {
+			bFound = true
+		}
+		if queries.Equal(v.ApprovedRevision, c.ApprovedRevision) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := LineRevisionSlice{&a}
+	if err = a.L.LoadApprovedRevisionLines(ctx, tx, false, (*[]*LineRevision)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ApprovedRevisionLines); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ApprovedRevisionLines = nil
+	if err = a.L.LoadApprovedRevisionLines(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ApprovedRevisionLines); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testLineRevisionToManyLineRevisionComments(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c LineRevisionComment
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, true, lineRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize LineRevision struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, lineRevisionCommentDBTypes, false, lineRevisionCommentColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, lineRevisionCommentDBTypes, false, lineRevisionCommentColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.LineRevisionID = a.ID
+	c.LineRevisionID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.LineRevisionComments().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.LineRevisionID == b.LineRevisionID {
+			bFound = true
+		}
+		if v.LineRevisionID == c.LineRevisionID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := LineRevisionSlice{&a}
+	if err = a.L.LoadLineRevisionComments(ctx, tx, false, (*[]*LineRevision)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.LineRevisionComments); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.LineRevisionComments = nil
+	if err = a.L.LoadLineRevisionComments(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.LineRevisionComments); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testLineRevisionToManyLineRevisionReactions(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c LineRevisionReaction
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, true, lineRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize LineRevision struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, lineRevisionReactionDBTypes, false, lineRevisionReactionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, lineRevisionReactionDBTypes, false, lineRevisionReactionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.LineRevisionID = a.ID
+	c.LineRevisionID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.LineRevisionReactions().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.LineRevisionID == b.LineRevisionID {
+			bFound = true
+		}
+		if v.LineRevisionID == c.LineRevisionID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := LineRevisionSlice{&a}
+	if err = a.L.LoadLineRevisionReactions(ctx, tx, false, (*[]*LineRevision)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.LineRevisionReactions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.LineRevisionReactions = nil
+	if err = a.L.LoadLineRevisionReactions(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.LineRevisionReactions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testLineRevisionToManyAddOpApprovedRevisionLines(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c, d, e Line
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Line{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Line{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddApprovedRevisionLines(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.ApprovedRevision) {
+			t.Error("foreign key was wrong value", a.ID, first.ApprovedRevision)
+		}
+		if !queries.Equal(a.ID, second.ApprovedRevision) {
+			t.Error("foreign key was wrong value", a.ID, second.ApprovedRevision)
+		}
+
+		if first.R.ApprovedRevisionLineRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.ApprovedRevisionLineRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.ApprovedRevisionLines[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ApprovedRevisionLines[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ApprovedRevisionLines().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testLineRevisionToManySetOpApprovedRevisionLines(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c, d, e Line
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Line{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetApprovedRevisionLines(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.ApprovedRevisionLines().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetApprovedRevisionLines(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.ApprovedRevisionLines().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ApprovedRevision) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ApprovedRevision) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.ApprovedRevision) {
+		t.Error("foreign key was wrong value", a.ID, d.ApprovedRevision)
+	}
+	if !queries.Equal(a.ID, e.ApprovedRevision) {
+		t.Error("foreign key was wrong value", a.ID, e.ApprovedRevision)
+	}
+
+	if b.R.ApprovedRevisionLineRevision != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.ApprovedRevisionLineRevision != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.ApprovedRevisionLineRevision != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.ApprovedRevisionLineRevision != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.ApprovedRevisionLines[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.ApprovedRevisionLines[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testLineRevisionToManyRemoveOpApprovedRevisionLines(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c, d, e Line
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Line{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, lineDBTypes, false, strmangle.SetComplement(linePrimaryKeyColumns, lineColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddApprovedRevisionLines(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.ApprovedRevisionLines().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveApprovedRevisionLines(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.ApprovedRevisionLines().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ApprovedRevision) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ApprovedRevision) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.ApprovedRevisionLineRevision != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.ApprovedRevisionLineRevision != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.ApprovedRevisionLineRevision != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.ApprovedRevisionLineRevision != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.ApprovedRevisionLines) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.ApprovedRevisionLines[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.ApprovedRevisionLines[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testLineRevisionToManyAddOpLineRevisionComments(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c, d, e LineRevisionComment
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*LineRevisionComment{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, lineRevisionCommentDBTypes, false, strmangle.SetComplement(lineRevisionCommentPrimaryKeyColumns, lineRevisionCommentColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*LineRevisionComment{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddLineRevisionComments(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.LineRevisionID {
+			t.Error("foreign key was wrong value", a.ID, first.LineRevisionID)
+		}
+		if a.ID != second.LineRevisionID {
+			t.Error("foreign key was wrong value", a.ID, second.LineRevisionID)
+		}
+
+		if first.R.LineRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.LineRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.LineRevisionComments[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.LineRevisionComments[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.LineRevisionComments().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testLineRevisionToManyAddOpLineRevisionReactions(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a LineRevision
+	var b, c, d, e LineRevisionReaction
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, lineRevisionDBTypes, false, strmangle.SetComplement(lineRevisionPrimaryKeyColumns, lineRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*LineRevisionReaction{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, lineRevisionReactionDBTypes, false, strmangle.SetComplement(lineRevisionReactionPrimaryKeyColumns, lineRevisionReactionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*LineRevisionReaction{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddLineRevisionReactions(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.LineRevisionID {
+			t.Error("foreign key was wrong value", a.ID, first.LineRevisionID)
+		}
+		if a.ID != second.LineRevisionID {
+			t.Error("foreign key was wrong value", a.ID, second.LineRevisionID)
+		}
+
+		if first.R.LineRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.LineRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.LineRevisionReactions[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.LineRevisionReactions[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.LineRevisionReactions().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testLineRevisionToOneUserUsingReviewer(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))

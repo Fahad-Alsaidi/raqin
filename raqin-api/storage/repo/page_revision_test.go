@@ -494,6 +494,640 @@ func testPageRevisionsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testPageRevisionToManyApprovedRevisionPages(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c Page
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, true, pageRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize PageRevision struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, pageDBTypes, false, pageColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, pageDBTypes, false, pageColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.ApprovedRevision, a.ID)
+	queries.Assign(&c.ApprovedRevision, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.ApprovedRevisionPages().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.ApprovedRevision, b.ApprovedRevision) {
+			bFound = true
+		}
+		if queries.Equal(v.ApprovedRevision, c.ApprovedRevision) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PageRevisionSlice{&a}
+	if err = a.L.LoadApprovedRevisionPages(ctx, tx, false, (*[]*PageRevision)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ApprovedRevisionPages); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ApprovedRevisionPages = nil
+	if err = a.L.LoadApprovedRevisionPages(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ApprovedRevisionPages); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testPageRevisionToManyPageRevisionComments(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c PageRevisionComment
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, true, pageRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize PageRevision struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, pageRevisionCommentDBTypes, false, pageRevisionCommentColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, pageRevisionCommentDBTypes, false, pageRevisionCommentColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.PageRevisionID = a.ID
+	c.PageRevisionID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.PageRevisionComments().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.PageRevisionID == b.PageRevisionID {
+			bFound = true
+		}
+		if v.PageRevisionID == c.PageRevisionID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PageRevisionSlice{&a}
+	if err = a.L.LoadPageRevisionComments(ctx, tx, false, (*[]*PageRevision)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PageRevisionComments); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.PageRevisionComments = nil
+	if err = a.L.LoadPageRevisionComments(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PageRevisionComments); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testPageRevisionToManyPageRevisionReactions(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c PageRevisionReaction
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, true, pageRevisionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize PageRevision struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, pageRevisionReactionDBTypes, false, pageRevisionReactionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, pageRevisionReactionDBTypes, false, pageRevisionReactionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.PageRevisionID = a.ID
+	c.PageRevisionID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.PageRevisionReactions().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.PageRevisionID == b.PageRevisionID {
+			bFound = true
+		}
+		if v.PageRevisionID == c.PageRevisionID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PageRevisionSlice{&a}
+	if err = a.L.LoadPageRevisionReactions(ctx, tx, false, (*[]*PageRevision)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PageRevisionReactions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.PageRevisionReactions = nil
+	if err = a.L.LoadPageRevisionReactions(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PageRevisionReactions); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testPageRevisionToManyAddOpApprovedRevisionPages(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c, d, e Page
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Page{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Page{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddApprovedRevisionPages(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.ApprovedRevision) {
+			t.Error("foreign key was wrong value", a.ID, first.ApprovedRevision)
+		}
+		if !queries.Equal(a.ID, second.ApprovedRevision) {
+			t.Error("foreign key was wrong value", a.ID, second.ApprovedRevision)
+		}
+
+		if first.R.ApprovedRevisionPageRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.ApprovedRevisionPageRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.ApprovedRevisionPages[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ApprovedRevisionPages[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ApprovedRevisionPages().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testPageRevisionToManySetOpApprovedRevisionPages(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c, d, e Page
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Page{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetApprovedRevisionPages(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.ApprovedRevisionPages().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetApprovedRevisionPages(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.ApprovedRevisionPages().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ApprovedRevision) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ApprovedRevision) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.ApprovedRevision) {
+		t.Error("foreign key was wrong value", a.ID, d.ApprovedRevision)
+	}
+	if !queries.Equal(a.ID, e.ApprovedRevision) {
+		t.Error("foreign key was wrong value", a.ID, e.ApprovedRevision)
+	}
+
+	if b.R.ApprovedRevisionPageRevision != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.ApprovedRevisionPageRevision != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.ApprovedRevisionPageRevision != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.ApprovedRevisionPageRevision != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.ApprovedRevisionPages[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.ApprovedRevisionPages[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testPageRevisionToManyRemoveOpApprovedRevisionPages(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c, d, e Page
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Page{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, pageDBTypes, false, strmangle.SetComplement(pagePrimaryKeyColumns, pageColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddApprovedRevisionPages(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.ApprovedRevisionPages().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveApprovedRevisionPages(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.ApprovedRevisionPages().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ApprovedRevision) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ApprovedRevision) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.ApprovedRevisionPageRevision != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.ApprovedRevisionPageRevision != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.ApprovedRevisionPageRevision != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.ApprovedRevisionPageRevision != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.ApprovedRevisionPages) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.ApprovedRevisionPages[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.ApprovedRevisionPages[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testPageRevisionToManyAddOpPageRevisionComments(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c, d, e PageRevisionComment
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PageRevisionComment{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, pageRevisionCommentDBTypes, false, strmangle.SetComplement(pageRevisionCommentPrimaryKeyColumns, pageRevisionCommentColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*PageRevisionComment{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddPageRevisionComments(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.PageRevisionID {
+			t.Error("foreign key was wrong value", a.ID, first.PageRevisionID)
+		}
+		if a.ID != second.PageRevisionID {
+			t.Error("foreign key was wrong value", a.ID, second.PageRevisionID)
+		}
+
+		if first.R.PageRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.PageRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.PageRevisionComments[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.PageRevisionComments[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.PageRevisionComments().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testPageRevisionToManyAddOpPageRevisionReactions(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PageRevision
+	var b, c, d, e PageRevisionReaction
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, pageRevisionDBTypes, false, strmangle.SetComplement(pageRevisionPrimaryKeyColumns, pageRevisionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PageRevisionReaction{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, pageRevisionReactionDBTypes, false, strmangle.SetComplement(pageRevisionReactionPrimaryKeyColumns, pageRevisionReactionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*PageRevisionReaction{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddPageRevisionReactions(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.PageRevisionID {
+			t.Error("foreign key was wrong value", a.ID, first.PageRevisionID)
+		}
+		if a.ID != second.PageRevisionID {
+			t.Error("foreign key was wrong value", a.ID, second.PageRevisionID)
+		}
+
+		if first.R.PageRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.PageRevision != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.PageRevisionReactions[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.PageRevisionReactions[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.PageRevisionReactions().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testPageRevisionToOneUserUsingReviewer(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
