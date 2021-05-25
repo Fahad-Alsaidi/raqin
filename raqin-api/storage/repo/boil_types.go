@@ -71,8 +71,7 @@ const (
 const (
 	LineStageNONE = "NONE"
 	LineStageINIT = "INIT"
-	LineStageREV1 = "REV1"
-	LineStageREV2 = "REV2"
+	LineStageREV  = "REV"
 	LineStageDONE = "DONE"
 )
 
@@ -87,8 +86,7 @@ const (
 const (
 	PageStageNONE = "NONE"
 	PageStageINIT = "INIT"
-	PageStageREV1 = "REV1"
-	PageStageREV2 = "REV2"
+	PageStageREV  = "REV"
 	PageStageDONE = "DONE"
 )
 

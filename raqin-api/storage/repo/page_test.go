@@ -1142,7 +1142,7 @@ func testPagesSelect(t *testing.T) {
 }
 
 var (
-	pageDBTypes = map[string]string{`ID`: `int`, `BookID`: `int`, `Path`: `varchar`, `Number`: `int`, `Stage`: `enum('NONE','INIT','REV1','REV2','DONE')`, `ApprovedRevision`: `int`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
+	pageDBTypes = map[string]string{`ID`: `int`, `BookID`: `int`, `Path`: `varchar`, `Number`: `int`, `Stage`: `enum('NONE','INIT','REV','DONE')`, `ApprovedRevision`: `int`, `CreatedAt`: `timestamp`, `UpdatedAt`: `timestamp`, `DeletedAt`: `timestamp`}
 	_           = bytes.MinRead
 )
 
