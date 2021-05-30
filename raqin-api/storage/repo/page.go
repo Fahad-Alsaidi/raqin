@@ -62,6 +62,29 @@ var PageColumns = struct {
 
 // Generated where
 
+type whereHelpernull_Int struct{ field string }
+
+func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var PageWhere = struct {
 	ID               whereHelperint
 	BookID           whereHelperint
@@ -88,12 +111,10 @@ var PageWhere = struct {
 var PageRels = struct {
 	Book                         string
 	ApprovedRevisionPageRevision string
-	Lines                        string
 	PageRevisions                string
 }{
 	Book:                         "Book",
 	ApprovedRevisionPageRevision: "ApprovedRevisionPageRevision",
-	Lines:                        "Lines",
 	PageRevisions:                "PageRevisions",
 }
 
@@ -101,7 +122,6 @@ var PageRels = struct {
 type pageR struct {
 	Book                         *Book             `boil:"Book" json:"Book" toml:"Book" yaml:"Book"`
 	ApprovedRevisionPageRevision *PageRevision     `boil:"ApprovedRevisionPageRevision" json:"ApprovedRevisionPageRevision" toml:"ApprovedRevisionPageRevision" yaml:"ApprovedRevisionPageRevision"`
-	Lines                        LineSlice         `boil:"Lines" json:"Lines" toml:"Lines" yaml:"Lines"`
 	PageRevisions                PageRevisionSlice `boil:"PageRevisions" json:"PageRevisions" toml:"PageRevisions" yaml:"PageRevisions"`
 }
 
@@ -423,27 +443,6 @@ func (o *Page) ApprovedRevisionPageRevision(mods ...qm.QueryMod) pageRevisionQue
 	return query
 }
 
-// Lines retrieves all the line's Lines with an executor.
-func (o *Page) Lines(mods ...qm.QueryMod) lineQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("`line`.`page_id`=?", o.ID),
-	)
-
-	query := Lines(queryMods...)
-	queries.SetFrom(query.Query, "`line`")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`line`.*"})
-	}
-
-	return query
-}
-
 // PageRevisions retrieves all the page_revision's PageRevisions with an executor.
 func (o *Page) PageRevisions(mods ...qm.QueryMod) pageRevisionQuery {
 	var queryMods []qm.QueryMod
@@ -677,104 +676,6 @@ func (pageL) LoadApprovedRevisionPageRevision(ctx context.Context, e boil.Contex
 	return nil
 }
 
-// LoadLines allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (pageL) LoadLines(ctx context.Context, e boil.ContextExecutor, singular bool, maybePage interface{}, mods queries.Applicator) error {
-	var slice []*Page
-	var object *Page
-
-	if singular {
-		object = maybePage.(*Page)
-	} else {
-		slice = *maybePage.(*[]*Page)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &pageR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &pageR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`line`),
-		qm.WhereIn(`line.page_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load line")
-	}
-
-	var resultSlice []*Line
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice line")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on line")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line")
-	}
-
-	if len(lineAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.Lines = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &lineR{}
-			}
-			foreign.R.Page = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.PageID {
-				local.R.Lines = append(local.R.Lines, foreign)
-				if foreign.R == nil {
-					foreign.R = &lineR{}
-				}
-				foreign.R.Page = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadPageRevisions allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (pageL) LoadPageRevisions(ctx context.Context, e boil.ContextExecutor, singular bool, maybePage interface{}, mods queries.Applicator) error {
@@ -996,59 +897,6 @@ func (o *Page) RemoveApprovedRevisionPageRevision(ctx context.Context, exec boil
 		}
 		related.R.ApprovedRevisionPages = related.R.ApprovedRevisionPages[:ln-1]
 		break
-	}
-	return nil
-}
-
-// AddLines adds the given related objects to the existing relationships
-// of the page, optionally inserting them as new records.
-// Appends related to o.R.Lines.
-// Sets related.R.Page appropriately.
-func (o *Page) AddLines(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Line) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.PageID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE `line` SET %s WHERE %s",
-				strmangle.SetParamNames("`", "`", 0, []string{"page_id"}),
-				strmangle.WhereClause("`", "`", 0, linePrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.PageID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &pageR{
-			Lines: related,
-		}
-	} else {
-		o.R.Lines = append(o.R.Lines, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &lineR{
-				Page: o,
-			}
-		} else {
-			rel.R.Page = o
-		}
 	}
 	return nil
 }

@@ -11,10 +11,6 @@ var TableNames = struct {
 	BookCategory         string
 	BookInitiater        string
 	Category             string
-	Line                 string
-	LineRevision         string
-	LineRevisionComment  string
-	LineRevisionReaction string
 	Page                 string
 	PageRevision         string
 	PageRevisionComment  string
@@ -28,10 +24,6 @@ var TableNames = struct {
 	BookCategory:         "book_category",
 	BookInitiater:        "book_initiater",
 	Category:             "category",
-	Line:                 "line",
-	LineRevision:         "line_revision",
-	LineRevisionComment:  "line_revision_comment",
-	LineRevisionReaction: "line_revision_reaction",
 	Page:                 "page",
 	PageRevision:         "page_revision",
 	PageRevisionComment:  "page_revision_comment",
