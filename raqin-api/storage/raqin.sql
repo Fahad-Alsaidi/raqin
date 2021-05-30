@@ -70,30 +70,8 @@ CREATE TABLE `page` (
   `book_id` int NOT NULL,
   `path` varchar(255) NOT NULL,
   `number` int NOT NULL,
-  `stage` ENUM ('NONE', 'INIT', 'REV1', 'REV2', 'DONE') NOT NULL DEFAULT "NONE",
-  `page_text` text,
-  `created_at` timestamp NOT NULL DEFAULT (now()),
-  `updated_at` timestamp NOT NULL DEFAULT (now()),
-  `deleted_at` timestamp
-);
-
-CREATE TABLE `line` (
-  `id` int PRIMARY KEY AUTO_INCREMENT,
-  `page_id` int NOT NULL,
-  `path` varchar(255) NOT NULL,
-  `number` int NOT NULL,
-  `stage` ENUM ('NONE', 'INIT', 'REV1', 'REV2', 'DONE') NOT NULL DEFAULT "NONE",
-  `line_text` text,
-  `created_at` timestamp NOT NULL DEFAULT (now()),
-  `updated_at` timestamp NOT NULL DEFAULT (now()),
-  `deleted_at` timestamp
-);
-
-CREATE TABLE `line_revision` (
-  `id` int PRIMARY KEY AUTO_INCREMENT,
-  `reviewer_id` int NOT NULL,
-  `line_id` int NOT NULL,
-  `line_text` text,
+  `stage` ENUM ('NONE', 'INIT', 'REV', 'DONE') NOT NULL DEFAULT "NONE",
+  `approved_revision` int,
   `created_at` timestamp NOT NULL DEFAULT (now()),
   `updated_at` timestamp NOT NULL DEFAULT (now()),
   `deleted_at` timestamp
@@ -104,6 +82,26 @@ CREATE TABLE `page_revision` (
   `reviewer_id` int NOT NULL,
   `page_id` int NOT NULL,
   `page_text` text,
+  `created_at` timestamp NOT NULL DEFAULT (now()),
+  `updated_at` timestamp NOT NULL DEFAULT (now()),
+  `deleted_at` timestamp
+);
+
+CREATE TABLE `page_revision_reaction` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `page_revision_id` int NOT NULL,
+  `reactor_id` int NOT NULL,
+  `reaction` ENUM ('NONE', 'APPROVE', 'DISAPPROVE') NOT NULL DEFAULT "NONE",
+  `created_at` timestamp NOT NULL DEFAULT (now()),
+  `updated_at` timestamp NOT NULL DEFAULT (now()),
+  `deleted_at` timestamp
+);
+
+CREATE TABLE `page_revision_comment` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `page_revision_id` int NOT NULL,
+  `commenter_id` int NOT NULL,
+  `comment` text NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT (now()),
   `updated_at` timestamp NOT NULL DEFAULT (now()),
   `deleted_at` timestamp
@@ -134,14 +132,28 @@ ALTER TABLE `book_category` ADD FOREIGN KEY (`category_id`) REFERENCES `category
 
 ALTER TABLE `page` ADD FOREIGN KEY (`book_id`) REFERENCES `book` (`id`);
 
-ALTER TABLE `line` ADD FOREIGN KEY (`page_id`) REFERENCES `page` (`id`);
-
-ALTER TABLE `line_revision` ADD FOREIGN KEY (`reviewer_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `line_revision` ADD FOREIGN KEY (`line_id`) REFERENCES `line` (`id`);
+ALTER TABLE `page` ADD FOREIGN KEY (`approved_revision`) REFERENCES `page_revision` (`id`);
 
 ALTER TABLE `page_revision` ADD FOREIGN KEY (`reviewer_id`) REFERENCES `user` (`id`);
 
 ALTER TABLE `page_revision` ADD FOREIGN KEY (`page_id`) REFERENCES `page` (`id`);
 
+ALTER TABLE `page_revision_reaction` ADD FOREIGN KEY (`page_revision_id`) REFERENCES `page_revision` (`id`);
+
+ALTER TABLE `page_revision_reaction` ADD FOREIGN KEY (`reactor_id`) REFERENCES `user` (`id`);
+
+ALTER TABLE `page_revision_comment` ADD FOREIGN KEY (`page_revision_id`) REFERENCES `page_revision` (`id`);
+
+ALTER TABLE `page_revision_comment` ADD FOREIGN KEY (`commenter_id`) REFERENCES `user` (`id`);
+
 ALTER TABLE `activity` ADD FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+
+CREATE UNIQUE INDEX `book_initiater_index_0` ON `book_initiater` (`user_id`, `book_id`);
+
+CREATE UNIQUE INDEX `book_author_index_1` ON `book_author` (`author_id`, `book_id`);
+
+CREATE UNIQUE INDEX `book_category_index_2` ON `book_category` (`category_id`, `book_id`);
+
+CREATE UNIQUE INDEX `page_revision_index_3` ON `page_revision` (`reviewer_id`, `page_id`, `deleted_at`);
+
+CREATE UNIQUE INDEX `page_revision_reaction_index_4` ON `page_revision_reaction` (`reactor_id`, `page_revision_id`);
