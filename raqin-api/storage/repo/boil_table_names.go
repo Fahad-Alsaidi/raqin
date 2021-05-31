@@ -4,29 +4,29 @@
 package repo
 
 var TableNames = struct {
-	Activity      string
-	Author        string
-	Book          string
-	BookAuthor    string
-	BookCategory  string
-	BookInitiater string
-	Category      string
-	Line          string
-	LineRevision  string
-	Page          string
-	PageRevision  string
-	User          string
+	Activity             string
+	Author               string
+	Book                 string
+	BookAuthor           string
+	BookCategory         string
+	BookInitiater        string
+	Category             string
+	Page                 string
+	PageRevision         string
+	PageRevisionComment  string
+	PageRevisionReaction string
+	User                 string
 }{
-	Activity:      "activity",
-	Author:        "author",
-	Book:          "book",
-	BookAuthor:    "book_author",
-	BookCategory:  "book_category",
-	BookInitiater: "book_initiater",
-	Category:      "category",
-	Line:          "line",
-	LineRevision:  "line_revision",
-	Page:          "page",
-	PageRevision:  "page_revision",
-	User:          "user",
+	Activity:             "activity",
+	Author:               "author",
+	Book:                 "book",
+	BookAuthor:           "book_author",
+	BookCategory:         "book_category",
+	BookInitiater:        "book_initiater",
+	Category:             "category",
+	Page:                 "page",
+	PageRevision:         "page_revision",
+	PageRevisionComment:  "page_revision_comment",
+	PageRevisionReaction: "page_revision_reaction",
+	User:                 "user",
 }

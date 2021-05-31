@@ -20,13 +20,13 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Categories", testCategoriesUpsert)
 
-	t.Run("Lines", testLinesUpsert)
-
-	t.Run("LineRevisions", testLineRevisionsUpsert)
-
 	t.Run("Pages", testPagesUpsert)
 
 	t.Run("PageRevisions", testPageRevisionsUpsert)
+
+	t.Run("PageRevisionComments", testPageRevisionCommentsUpsert)
+
+	t.Run("PageRevisionReactions", testPageRevisionReactionsUpsert)
 
 	t.Run("Users", testUsersUpsert)
 }

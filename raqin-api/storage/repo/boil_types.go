@@ -67,22 +67,19 @@ const (
 	ActivityActionDELETE = "DELETE"
 )
 
-// Enum values for line.stage
-const (
-	LineStageNONE = "NONE"
-	LineStageINIT = "INIT"
-	LineStageREV1 = "REV1"
-	LineStageREV2 = "REV2"
-	LineStageDONE = "DONE"
-)
-
 // Enum values for page.stage
 const (
 	PageStageNONE = "NONE"
 	PageStageINIT = "INIT"
-	PageStageREV1 = "REV1"
-	PageStageREV2 = "REV2"
+	PageStageREV  = "REV"
 	PageStageDONE = "DONE"
+)
+
+// Enum values for page_revision_reaction.reaction
+const (
+	PageRevisionReactionReactionNONE       = "NONE"
+	PageRevisionReactionReactionAPPROVE    = "APPROVE"
+	PageRevisionReactionReactionDISAPPROVE = "DISAPPROVE"
 )
 
 // Enum values for user.role

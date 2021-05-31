@@ -18,4 +18,7 @@ func Init(gRouter *echo.Group) {
 
 	// all user routes will be inside userRouter
 	userRouter(gRouter.Group("/user"))
+
+	// all page routes will be inside pageRouter
+	pageRouter(gRouter.Group("/page"))
 }

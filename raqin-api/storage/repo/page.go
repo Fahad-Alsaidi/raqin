@@ -24,82 +24,105 @@ import (
 
 // Page is an object representing the database table.
 type Page struct {
-	ID        int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	BookID    int         `boil:"book_id" json:"book_id" toml:"book_id" yaml:"book_id"`
-	Path      string      `boil:"path" json:"path" toml:"path" yaml:"path"`
-	Number    int         `boil:"number" json:"number" toml:"number" yaml:"number"`
-	Stage     string      `boil:"stage" json:"stage" toml:"stage" yaml:"stage"`
-	PageText  null.String `boil:"page_text" json:"page_text,omitempty" toml:"page_text" yaml:"page_text,omitempty"`
-	CreatedAt time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	DeletedAt time.Time   `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
+	ID               int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	BookID           int       `boil:"book_id" json:"book_id" toml:"book_id" yaml:"book_id"`
+	Path             string    `boil:"path" json:"path" toml:"path" yaml:"path"`
+	Number           int       `boil:"number" json:"number" toml:"number" yaml:"number"`
+	Stage            string    `boil:"stage" json:"stage" toml:"stage" yaml:"stage"`
+	ApprovedRevision null.Int  `boil:"approved_revision" json:"approved_revision,omitempty" toml:"approved_revision" yaml:"approved_revision,omitempty"`
+	CreatedAt        time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt        time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	DeletedAt        time.Time `boil:"deleted_at" json:"deleted_at" toml:"deleted_at" yaml:"deleted_at"`
 
 	R *pageR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L pageL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var PageColumns = struct {
-	ID        string
-	BookID    string
-	Path      string
-	Number    string
-	Stage     string
-	PageText  string
-	CreatedAt string
-	UpdatedAt string
-	DeletedAt string
+	ID               string
+	BookID           string
+	Path             string
+	Number           string
+	Stage            string
+	ApprovedRevision string
+	CreatedAt        string
+	UpdatedAt        string
+	DeletedAt        string
 }{
-	ID:        "id",
-	BookID:    "book_id",
-	Path:      "path",
-	Number:    "number",
-	Stage:     "stage",
-	PageText:  "page_text",
-	CreatedAt: "created_at",
-	UpdatedAt: "updated_at",
-	DeletedAt: "deleted_at",
+	ID:               "id",
+	BookID:           "book_id",
+	Path:             "path",
+	Number:           "number",
+	Stage:            "stage",
+	ApprovedRevision: "approved_revision",
+	CreatedAt:        "created_at",
+	UpdatedAt:        "updated_at",
+	DeletedAt:        "deleted_at",
 }
 
 // Generated where
 
+type whereHelpernull_Int struct{ field string }
+
+func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var PageWhere = struct {
-	ID        whereHelperint
-	BookID    whereHelperint
-	Path      whereHelperstring
-	Number    whereHelperint
-	Stage     whereHelperstring
-	PageText  whereHelpernull_String
-	CreatedAt whereHelpertime_Time
-	UpdatedAt whereHelpertime_Time
-	DeletedAt whereHelpertime_Time
+	ID               whereHelperint
+	BookID           whereHelperint
+	Path             whereHelperstring
+	Number           whereHelperint
+	Stage            whereHelperstring
+	ApprovedRevision whereHelpernull_Int
+	CreatedAt        whereHelpertime_Time
+	UpdatedAt        whereHelpertime_Time
+	DeletedAt        whereHelpertime_Time
 }{
-	ID:        whereHelperint{field: "`page`.`id`"},
-	BookID:    whereHelperint{field: "`page`.`book_id`"},
-	Path:      whereHelperstring{field: "`page`.`path`"},
-	Number:    whereHelperint{field: "`page`.`number`"},
-	Stage:     whereHelperstring{field: "`page`.`stage`"},
-	PageText:  whereHelpernull_String{field: "`page`.`page_text`"},
-	CreatedAt: whereHelpertime_Time{field: "`page`.`created_at`"},
-	UpdatedAt: whereHelpertime_Time{field: "`page`.`updated_at`"},
-	DeletedAt: whereHelpertime_Time{field: "`page`.`deleted_at`"},
+	ID:               whereHelperint{field: "`page`.`id`"},
+	BookID:           whereHelperint{field: "`page`.`book_id`"},
+	Path:             whereHelperstring{field: "`page`.`path`"},
+	Number:           whereHelperint{field: "`page`.`number`"},
+	Stage:            whereHelperstring{field: "`page`.`stage`"},
+	ApprovedRevision: whereHelpernull_Int{field: "`page`.`approved_revision`"},
+	CreatedAt:        whereHelpertime_Time{field: "`page`.`created_at`"},
+	UpdatedAt:        whereHelpertime_Time{field: "`page`.`updated_at`"},
+	DeletedAt:        whereHelpertime_Time{field: "`page`.`deleted_at`"},
 }
 
 // PageRels is where relationship names are stored.
 var PageRels = struct {
-	Book          string
-	Lines         string
-	PageRevisions string
+	Book                         string
+	ApprovedRevisionPageRevision string
+	PageRevisions                string
 }{
-	Book:          "Book",
-	Lines:         "Lines",
-	PageRevisions: "PageRevisions",
+	Book:                         "Book",
+	ApprovedRevisionPageRevision: "ApprovedRevisionPageRevision",
+	PageRevisions:                "PageRevisions",
 }
 
 // pageR is where relationships are stored.
 type pageR struct {
-	Book          *Book             `boil:"Book" json:"Book" toml:"Book" yaml:"Book"`
-	Lines         LineSlice         `boil:"Lines" json:"Lines" toml:"Lines" yaml:"Lines"`
-	PageRevisions PageRevisionSlice `boil:"PageRevisions" json:"PageRevisions" toml:"PageRevisions" yaml:"PageRevisions"`
+	Book                         *Book             `boil:"Book" json:"Book" toml:"Book" yaml:"Book"`
+	ApprovedRevisionPageRevision *PageRevision     `boil:"ApprovedRevisionPageRevision" json:"ApprovedRevisionPageRevision" toml:"ApprovedRevisionPageRevision" yaml:"ApprovedRevisionPageRevision"`
+	PageRevisions                PageRevisionSlice `boil:"PageRevisions" json:"PageRevisions" toml:"PageRevisions" yaml:"PageRevisions"`
 }
 
 // NewStruct creates a new relationship struct
@@ -111,8 +134,8 @@ func (*pageR) NewStruct() *pageR {
 type pageL struct{}
 
 var (
-	pageAllColumns            = []string{"id", "book_id", "path", "number", "stage", "page_text", "created_at", "updated_at", "deleted_at"}
-	pageColumnsWithoutDefault = []string{"book_id", "path", "number", "page_text"}
+	pageAllColumns            = []string{"id", "book_id", "path", "number", "stage", "approved_revision", "created_at", "updated_at", "deleted_at"}
+	pageColumnsWithoutDefault = []string{"book_id", "path", "number", "approved_revision"}
 	pageColumnsWithDefault    = []string{"id", "stage", "created_at", "updated_at", "deleted_at"}
 	pagePrimaryKeyColumns     = []string{"id"}
 )
@@ -406,23 +429,16 @@ func (o *Page) Book(mods ...qm.QueryMod) bookQuery {
 	return query
 }
 
-// Lines retrieves all the line's Lines with an executor.
-func (o *Page) Lines(mods ...qm.QueryMod) lineQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
+// ApprovedRevisionPageRevision pointed to by the foreign key.
+func (o *Page) ApprovedRevisionPageRevision(mods ...qm.QueryMod) pageRevisionQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("`id` = ?", o.ApprovedRevision),
 	}
 
-	queryMods = append(queryMods,
-		qm.Where("`line`.`page_id`=?", o.ID),
-	)
+	queryMods = append(queryMods, mods...)
 
-	query := Lines(queryMods...)
-	queries.SetFrom(query.Query, "`line`")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`line`.*"})
-	}
+	query := PageRevisions(queryMods...)
+	queries.SetFrom(query.Query, "`page_revision`")
 
 	return query
 }
@@ -552,9 +568,9 @@ func (pageL) LoadBook(ctx context.Context, e boil.ContextExecutor, singular bool
 	return nil
 }
 
-// LoadLines allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (pageL) LoadLines(ctx context.Context, e boil.ContextExecutor, singular bool, maybePage interface{}, mods queries.Applicator) error {
+// LoadApprovedRevisionPageRevision allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (pageL) LoadApprovedRevisionPageRevision(ctx context.Context, e boil.ContextExecutor, singular bool, maybePage interface{}, mods queries.Applicator) error {
 	var slice []*Page
 	var object *Page
 
@@ -569,7 +585,10 @@ func (pageL) LoadLines(ctx context.Context, e boil.ContextExecutor, singular boo
 		if object.R == nil {
 			object.R = &pageR{}
 		}
-		args = append(args, object.ID)
+		if !queries.IsNil(object.ApprovedRevision) {
+			args = append(args, object.ApprovedRevision)
+		}
+
 	} else {
 	Outer:
 		for _, obj := range slice {
@@ -578,12 +597,15 @@ func (pageL) LoadLines(ctx context.Context, e boil.ContextExecutor, singular boo
 			}
 
 			for _, a := range args {
-				if a == obj.ID {
+				if queries.Equal(a, obj.ApprovedRevision) {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.ID)
+			if !queries.IsNil(obj.ApprovedRevision) {
+				args = append(args, obj.ApprovedRevision)
+			}
+
 		}
 	}
 
@@ -592,8 +614,8 @@ func (pageL) LoadLines(ctx context.Context, e boil.ContextExecutor, singular boo
 	}
 
 	query := NewQuery(
-		qm.From(`line`),
-		qm.WhereIn(`line.page_id in ?`, args...),
+		qm.From(`page_revision`),
+		qm.WhereIn(`page_revision.id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -601,47 +623,51 @@ func (pageL) LoadLines(ctx context.Context, e boil.ContextExecutor, singular boo
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load line")
+		return errors.Wrap(err, "failed to eager load PageRevision")
 	}
 
-	var resultSlice []*Line
+	var resultSlice []*PageRevision
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice line")
+		return errors.Wrap(err, "failed to bind eager loaded slice PageRevision")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on line")
+		return errors.Wrap(err, "failed to close results of eager load for page_revision")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for line")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for page_revision")
 	}
 
-	if len(lineAfterSelectHooks) != 0 {
+	if len(pageAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
 			}
 		}
 	}
-	if singular {
-		object.R.Lines = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &lineR{}
-			}
-			foreign.R.Page = object
-		}
+
+	if len(resultSlice) == 0 {
 		return nil
 	}
 
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.PageID {
-				local.R.Lines = append(local.R.Lines, foreign)
+	if singular {
+		foreign := resultSlice[0]
+		object.R.ApprovedRevisionPageRevision = foreign
+		if foreign.R == nil {
+			foreign.R = &pageRevisionR{}
+		}
+		foreign.R.ApprovedRevisionPages = append(foreign.R.ApprovedRevisionPages, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.ApprovedRevision, foreign.ID) {
+				local.R.ApprovedRevisionPageRevision = foreign
 				if foreign.R == nil {
-					foreign.R = &lineR{}
+					foreign.R = &pageRevisionR{}
 				}
-				foreign.R.Page = local
+				foreign.R.ApprovedRevisionPages = append(foreign.R.ApprovedRevisionPages, local)
 				break
 			}
 		}
@@ -795,55 +821,82 @@ func (o *Page) SetBook(ctx context.Context, exec boil.ContextExecutor, insert bo
 	return nil
 }
 
-// AddLines adds the given related objects to the existing relationships
-// of the page, optionally inserting them as new records.
-// Appends related to o.R.Lines.
-// Sets related.R.Page appropriately.
-func (o *Page) AddLines(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Line) error {
+// SetApprovedRevisionPageRevision of the page to the related item.
+// Sets o.R.ApprovedRevisionPageRevision to related.
+// Adds o to related.R.ApprovedRevisionPages.
+func (o *Page) SetApprovedRevisionPageRevision(ctx context.Context, exec boil.ContextExecutor, insert bool, related *PageRevision) error {
 	var err error
-	for _, rel := range related {
-		if insert {
-			rel.PageID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE `line` SET %s WHERE %s",
-				strmangle.SetParamNames("`", "`", 0, []string{"page_id"}),
-				strmangle.WhereClause("`", "`", 0, linePrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.PageID = o.ID
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
 
+	updateQuery := fmt.Sprintf(
+		"UPDATE `page` SET %s WHERE %s",
+		strmangle.SetParamNames("`", "`", 0, []string{"approved_revision"}),
+		strmangle.WhereClause("`", "`", 0, pagePrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.ApprovedRevision, related.ID)
 	if o.R == nil {
 		o.R = &pageR{
-			Lines: related,
+			ApprovedRevisionPageRevision: related,
 		}
 	} else {
-		o.R.Lines = append(o.R.Lines, related...)
+		o.R.ApprovedRevisionPageRevision = related
 	}
 
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &lineR{
-				Page: o,
-			}
-		} else {
-			rel.R.Page = o
+	if related.R == nil {
+		related.R = &pageRevisionR{
+			ApprovedRevisionPages: PageSlice{o},
 		}
+	} else {
+		related.R.ApprovedRevisionPages = append(related.R.ApprovedRevisionPages, o)
+	}
+
+	return nil
+}
+
+// RemoveApprovedRevisionPageRevision relationship.
+// Sets o.R.ApprovedRevisionPageRevision to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Page) RemoveApprovedRevisionPageRevision(ctx context.Context, exec boil.ContextExecutor, related *PageRevision) error {
+	var err error
+
+	queries.SetScanner(&o.ApprovedRevision, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("approved_revision")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.ApprovedRevisionPageRevision = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.ApprovedRevisionPages {
+		if queries.Equal(o.ApprovedRevision, ri.ApprovedRevision) {
+			continue
+		}
+
+		ln := len(related.R.ApprovedRevisionPages)
+		if ln > 1 && i < ln-1 {
+			related.R.ApprovedRevisionPages[i] = related.R.ApprovedRevisionPages[ln-1]
+		}
+		related.R.ApprovedRevisionPages = related.R.ApprovedRevisionPages[:ln-1]
+		break
 	}
 	return nil
 }
