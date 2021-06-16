@@ -3,18 +3,14 @@ package author
 import "time"
 
 type NewAuthorRequest struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-}
-
-type DeleteAuthorRequest struct {
-	ID int `query:"id"`
+	FirstName string `json:"first_name" validate:"required,alpha"`
+	LastName  string `json:"last_name" validate:"required,alpha"`
 }
 
 type UpdateAuthorRequest struct {
-	ID        int    `json:"id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	ID        int    `json:"id" validate:"required,number"`
+	FirstName string `json:"first_name" validate:"required,alpha"`
+	LastName  string `json:"last_name" validate:"required,alpha"`
 }
 
 type AuthorResponse struct {
@@ -25,6 +21,6 @@ type AuthorResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type GetAuthorByIDRequest struct {
-	ID int `query:"id"`
+type ByID struct {
+	ID int `query:"id" validate:"required,number"`
 }
