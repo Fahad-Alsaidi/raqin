@@ -17,5 +17,4 @@ func categoryRouter(gRoute *echo.Group) {
 	gRoute.DELETE("/delete", categoryCtrl.DeleteCategory)
 	gRoute.PATCH("/update", categoryCtrl.UpdateCategory)
 	gRoute.GET("/all", categoryCtrl.AllCategories)
-	gRoute.GET("", categoryCtrl.CategoryByID)
 }
