@@ -8,18 +8,18 @@ import (
 )
 
 type UpdateBookRequest struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Notes string `json:"notes"`
+	ID    int    `json:"id" validate:"required,number"`
+	Name  string `json:"name" validate:"required,alpha"`
+	Notes string `json:"notes" validate:"required,alpha"`
 }
 
 type NewBookRequest struct {
-	Name       string        `form:"name"`
-	Notes      string        `form:"notes"`
-	Category   []int         `form:"category"`
-	Authors    []int         `form:"authors"`
-	Initiators []int         `form:"initiators"`
-	File       io.ReadCloser `form:"file"`
+	Name       string        `form:"name" validate:"required,alpha"`
+	Notes      string        `form:"notes" validate:"required,alpha"`
+	Category   []int         `form:"category" validate:"required,number,dive"`
+	Authors    []int         `form:"authors" validate:"required,number,dive"`
+	Initiators []int         `form:"initiators" validate:"required,number,dive"`
+	File       io.ReadCloser `form:"file" validate:"required"`
 }
 type BookResponse struct {
 	ID       int                         `json:"id"`
@@ -31,14 +31,14 @@ type BookResponse struct {
 }
 
 type BookIDRequest struct {
-	ID int `query:"id"`
+	ID int `query:"id" validate:"required,number"`
 }
 
 type AddBookRel struct {
-	ID     int `query:"id"`
-	BookID int `query:"book_id"`
+	ID     int `query:"id" validate:"required,number"`
+	BookID int `query:"book_id" validate:"required,number"`
 }
 
 type RemoveBookRel struct {
-	ID int `query:"id"`
+	ID int `query:"id" validate:"required,number"`
 }
