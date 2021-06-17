@@ -9,13 +9,14 @@ import (
 	"raqin-api/app/user"
 	"raqin-api/storage/repo"
 	"raqin-api/utils/irror"
+	"raqin-api/utils/validator"
 	"time"
 
 	"github.com/volatiletech/null/v8"
 )
 
 type BookService interface {
-	NewBook(NewBookRequest) (BookResponse, error)
+	NewBook(NewBookRequest) (*BookResponse, error)
 	UpdateBook(UpdateBookRequest) error
 	DeleteBook(BookIDRequest) error
 	AllBooks() ([]BookResponse, error)
@@ -37,7 +38,11 @@ func NewBookService(bookRepo BookRepo) *bookService {
 }
 
 // NewBook will register book in db and file system and returns BookResponse
-func (bkSrvc *bookService) NewBook(in NewBookRequest) (res BookResponse, err error) {
+func (bkSrvc *bookService) NewBook(in NewBookRequest) (res *BookResponse, err error) {
+
+	if err := validator.Validate(in); err != nil {
+		return nil, err
+	}
 
 	defer in.File.Close()
 	fileBytes, err := ioutil.ReadAll(in.File)
@@ -73,7 +78,7 @@ func (bkSrvc *bookService) NewBook(in NewBookRequest) (res BookResponse, err err
 		return res, irror.New("can not save book file").Wrap(err)
 	}
 
-	res, err = bkSrvc.BookRelations(b.ID)
+	*res, err = bkSrvc.BookRelations(b.ID)
 	if err != nil {
 		return res, err
 	}
@@ -86,6 +91,10 @@ func (bkSrvc *bookService) NewBook(in NewBookRequest) (res BookResponse, err err
 }
 
 func (bkSrvc *bookService) UpdateBook(in UpdateBookRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	book := &repo.Book{
 		ID:        in.ID,
@@ -103,6 +112,10 @@ func (bkSrvc *bookService) UpdateBook(in UpdateBookRequest) error {
 }
 
 func (bkSrvc *bookService) DeleteBook(in BookIDRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	book := &repo.Book{
 		ID:        in.ID,
@@ -199,6 +212,10 @@ func (bkSrvc *bookService) BookRelations(id int) (res BookResponse, err error) {
 
 func (bkSrvc *bookService) BookToPages(in BookIDRequest) (res int, err error) {
 
+	if err := validator.Validate(in); err != nil {
+		return 0, err
+	}
+
 	bk, err := bkSrvc.bookRepo.BookByID(in.ID)
 	if err != nil {
 		return res, err
@@ -231,6 +248,10 @@ func (bkSrvc *bookService) BookToPages(in BookIDRequest) (res int, err error) {
 
 func (bkSrvc *bookService) AddBookAuthor(bkAuthor AddBookRel) error {
 
+	if err := validator.Validate(bkAuthor); err != nil {
+		return err
+	}
+
 	ba := &repo.BookAuthor{
 		BookID:   bkAuthor.BookID,
 		AuthorID: bkAuthor.ID,
@@ -245,6 +266,11 @@ func (bkSrvc *bookService) AddBookAuthor(bkAuthor AddBookRel) error {
 }
 
 func (bkSrvc *bookService) RemoveBookAuthor(bkAuthor RemoveBookRel) error {
+
+	if err := validator.Validate(bkAuthor); err != nil {
+		return err
+	}
+
 	ba := &repo.BookAuthor{
 		ID: bkAuthor.ID,
 	}
@@ -259,6 +285,10 @@ func (bkSrvc *bookService) RemoveBookAuthor(bkAuthor RemoveBookRel) error {
 }
 
 func (bkSrvc *bookService) AddBookCategory(bkCategory AddBookRel) error {
+
+	if err := validator.Validate(bkCategory); err != nil {
+		return err
+	}
 
 	bc := &repo.BookCategory{
 		BookID:     bkCategory.BookID,
@@ -275,6 +305,10 @@ func (bkSrvc *bookService) AddBookCategory(bkCategory AddBookRel) error {
 
 func (bkSrvc *bookService) RemoveBookCategory(bkCategory RemoveBookRel) error {
 
+	if err := validator.Validate(bkCategory); err != nil {
+		return err
+	}
+
 	bc := &repo.BookCategory{
 		ID: bkCategory.ID,
 	}
@@ -288,6 +322,10 @@ func (bkSrvc *bookService) RemoveBookCategory(bkCategory RemoveBookRel) error {
 }
 
 func (bkSrvc *bookService) AddBookInitiator(bkInitiater AddBookRel) error {
+
+	if err := validator.Validate(bkInitiater); err != nil {
+		return err
+	}
 
 	bi := &repo.BookInitiater{
 		BookID: bkInitiater.BookID,
@@ -303,6 +341,10 @@ func (bkSrvc *bookService) AddBookInitiator(bkInitiater AddBookRel) error {
 }
 
 func (bkSrvc *bookService) RemoveBookInitiator(bkInitiater RemoveBookRel) error {
+
+	if err := validator.Validate(bkInitiater); err != nil {
+		return err
+	}
 
 	bi := &repo.BookInitiater{
 		ID: bkInitiater.ID,
