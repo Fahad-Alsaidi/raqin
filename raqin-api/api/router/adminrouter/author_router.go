@@ -15,5 +15,4 @@ func authorRouter(gRoute *echo.Group) {
 	gRoute.DELETE("/delete", authorCtrl.DeleteAuthor)
 	gRoute.PATCH("/update", authorCtrl.UpdateAuthor)
 	gRoute.GET("/all", authorCtrl.AllAuthors)
-	gRoute.GET("", authorCtrl.AuthorByID)
 }

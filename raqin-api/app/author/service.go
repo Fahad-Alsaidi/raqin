@@ -12,7 +12,6 @@ type AuthorService interface {
 	DeleteAuthor(in ByID) error
 	UpdateAuthor(in UpdateAuthorRequest) error
 	AllAuthors() (*[]AuthorResponse, error)
-	AuthorByID(in ByID) (*AuthorResponse, error)
 }
 
 type authorService struct {
@@ -108,24 +107,4 @@ func (auSrvc *authorService) AllAuthors() (*[]AuthorResponse, error) {
 	}
 
 	return &authorsResponse, nil
-}
-
-func (auSrvc *authorService) AuthorByID(in ByID) (*AuthorResponse, error) {
-
-	if err := validator.Validate(in); err != nil {
-		return nil, err
-	}
-
-	author, err := auSrvc.authorRepo.AuthorByID(in.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AuthorResponse{
-		ID:        int64(author.ID),
-		FirstName: author.FirstName,
-		LastName:  author.LastName,
-		CreatedAt: author.CreatedAt,
-		UpdatedAt: author.UpdatedAt,
-	}, nil
 }

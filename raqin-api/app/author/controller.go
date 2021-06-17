@@ -68,18 +68,3 @@ func (aCtrl *authorController) AllAuthors(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, authors)
 }
-
-func (aCtrl *authorController) AuthorByID(c echo.Context) error {
-
-	author := ByID{}
-	if err := c.Bind(&author); err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	authors, err := aCtrl.authorservice.AuthorByID(author)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-
-	return c.JSON(http.StatusOK, &authors)
-}
