@@ -8,6 +8,7 @@ import (
 	"raqin-api/utils/irror"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var (
@@ -49,7 +50,6 @@ func (aurepo *authorRepo) NewAuthor(author *repo.Author) (*repo.Author, error) {
 	}
 
 	tx.Commit()
-
 	return author, nil
 }
 
@@ -97,7 +97,8 @@ func (aurepo *authorRepo) AllAuthors() (*repo.AuthorSlice, error) {
 		return nil, errCanNotGetAuthors.Wrap(err)
 	}
 
-	authors, err := repo.Authors().All(ctx, tx)
+	authors, err := repo.Authors(
+		qm.Where("deleted_at = '0000-00-00 00:00:00'")).All(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return nil, errCanNotGetAuthors.Wrap(err)
@@ -122,6 +123,5 @@ func (aurepo *authorRepo) AuthorByID(id int) (*repo.Author, error) {
 	}
 
 	tx.Commit()
-
 	return author, nil
 }
