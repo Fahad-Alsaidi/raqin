@@ -288,7 +288,10 @@ func (br *bookRepo) RemoveBookAuthor(bkAuthor *repo.BookAuthor) (int64, error) {
 		return 0, errCanNotRemoveBookAuthor.Wrap(err)
 	}
 
-	n, err := bkAuthor.Delete(ctx, tx)
+	n, err := repo.BookAuthors(
+		qm.Where("book_id = ?", bkAuthor.BookID),
+		qm.Where("author_id = ?", bkAuthor.AuthorID),
+	).DeleteAll(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return 0, errCanNotRemoveBookAuthor.Wrap(err)
@@ -324,7 +327,10 @@ func (br *bookRepo) RemoveBookCategory(bkCategory *repo.BookCategory) (int64, er
 		return 0, errCanNotRemoveBookCategory.Wrap(err)
 	}
 
-	n, err := bkCategory.Delete(ctx, tx)
+	n, err := repo.BookCategories(
+		qm.Where("book_id = ?", bkCategory.BookID),
+		qm.Where("category_id = ?", bkCategory.CategoryID),
+	).DeleteAll(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return 0, errCanNotRemoveBookCategory.Wrap(err)
@@ -360,7 +366,10 @@ func (br *bookRepo) RemoveBookInitiator(bkInitiater *repo.BookInitiater) (int64,
 		return 0, errCanNotRemoveBookInitiator.Wrap(err)
 	}
 
-	n, err := bkInitiater.Delete(ctx, tx)
+	n, err := repo.BookInitiaters(
+		qm.Where("book_id = ?", bkInitiater.BookID),
+		qm.Where("user_id = ?", bkInitiater.UserID),
+	).DeleteAll(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return 0, errCanNotRemoveBookInitiator.Wrap(err)

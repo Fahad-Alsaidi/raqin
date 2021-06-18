@@ -78,7 +78,7 @@ func (bkSrvc *bookService) NewBook(in NewBookRequest) (res *BookResponse, err er
 		return res, irror.New("can not save book file").Wrap(err)
 	}
 
-	*res, err = bkSrvc.BookRelations(b.ID)
+	res, err = bkSrvc.BookRelations(b.ID)
 	if err != nil {
 		return res, err
 	}
@@ -146,13 +146,13 @@ func (bkSrvc *bookService) AllBooks() ([]BookResponse, error) {
 		res.Name = bk.Name
 		res.Notes = bk.Note.String
 
-		bookResponse = append(bookResponse, res)
+		bookResponse = append(bookResponse, *res)
 	}
 
 	return bookResponse, nil
 }
 
-func (bkSrvc *bookService) BookRelations(id int) (res BookResponse, err error) {
+func (bkSrvc *bookService) BookRelations(id int) (res *BookResponse, err error) {
 
 	// get the authors of the book to return as response
 	authors := []author.AuthorResponse{}
@@ -201,7 +201,7 @@ func (bkSrvc *bookService) BookRelations(id int) (res BookResponse, err error) {
 		users = append(users, u)
 	}
 
-	res = BookResponse{
+	res = &BookResponse{
 		Authors:  authors,
 		Category: categories,
 		Users:    users,
@@ -272,7 +272,8 @@ func (bkSrvc *bookService) RemoveBookAuthor(bkAuthor RemoveBookRel) error {
 	}
 
 	ba := &repo.BookAuthor{
-		ID: bkAuthor.ID,
+		AuthorID: bkAuthor.ID,
+		BookID:   bkAuthor.BookID,
 	}
 
 	_, err := bkSrvc.bookRepo.RemoveBookAuthor(ba)
@@ -310,7 +311,8 @@ func (bkSrvc *bookService) RemoveBookCategory(bkCategory RemoveBookRel) error {
 	}
 
 	bc := &repo.BookCategory{
-		ID: bkCategory.ID,
+		CategoryID: bkCategory.ID,
+		BookID:     bkCategory.BookID,
 	}
 
 	_, err := bkSrvc.bookRepo.RemoveBookCategory(bc)
@@ -347,7 +349,8 @@ func (bkSrvc *bookService) RemoveBookInitiator(bkInitiater RemoveBookRel) error 
 	}
 
 	bi := &repo.BookInitiater{
-		ID: bkInitiater.ID,
+		UserID: bkInitiater.ID,
+		BookID: bkInitiater.BookID,
 	}
 
 	_, err := bkSrvc.bookRepo.RemoveBookInitiator(bi)
