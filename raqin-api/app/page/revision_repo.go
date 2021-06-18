@@ -3,6 +3,7 @@ package page
 import (
 	"context"
 	"raqin-api/storage/repo"
+	"raqin-api/utils/irror"
 	"time"
 
 	"github.com/volatiletech/null/v8"
@@ -10,17 +11,26 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
+var (
+	errCanNotInsert          = irror.New("can not insert revision")
+	errCanNotDelete          = irror.New("can not delete revision")
+	errCanNotUpdate          = irror.New("can not update revision")
+	errCanNotGetRevision     = irror.New("can not get revision")
+	errCanNotGetRevisions    = irror.New("can not get revisions")
+	errCanNotApproveRevision = irror.New("can not approve revision")
+)
+
 func (pr *pageRepo) NewRevision(pageRev *repo.PageRevision) (*repo.PageRevision, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotInsert.Wrap(err)
 	}
 
 	err = pageRev.Insert(ctx, tx, boil.Infer())
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errCanNotInsert.Wrap(err)
 	}
 
 	tx.Commit()
@@ -31,13 +41,13 @@ func (pr *pageRepo) UpdateRevision(pageRev *repo.PageRevision) (int64, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, err
+		return 0, errCanNotUpdate.Wrap(err)
 	}
 
 	n, err := pageRev.Update(ctx, tx, boil.Whitelist("page_text"))
-	if err != nil || n == 0 {
+	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return 0, errCanNotUpdate.Wrap(err)
 	}
 
 	tx.Commit()
@@ -48,13 +58,13 @@ func (pr *pageRepo) DeleteRevision(pageRev *repo.PageRevision) (int64, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, err
+		return 0, errCanNotDelete.Wrap(err)
 	}
 
 	n, err := pageRev.Update(ctx, tx, boil.Whitelist("deleted_at"))
-	if err != nil || n == 0 {
+	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return 0, errCanNotDelete.Wrap(err)
 	}
 
 	tx.Commit()
@@ -65,7 +75,7 @@ func (pr *pageRepo) RevisionsByReviewerID(id int) (*repo.PageRevisionSlice, erro
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotGetRevisions.Wrap(err)
 	}
 
 	revs, err := repo.PageRevisions(
@@ -74,11 +84,8 @@ func (pr *pageRepo) RevisionsByReviewerID(id int) (*repo.PageRevisionSlice, erro
 		qm.Load(repo.PageRevisionRels.Reviewer),
 		qm.Load(repo.PageRevisionRels.Page)).All(ctx, tx)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		return nil, errCanNotGetRevisions.Wrap(err)
 	}
-
-	tx.Commit()
 
 	return &revs, nil
 }
@@ -87,7 +94,7 @@ func (pr *pageRepo) RevisionsByPageID(id int) (*repo.PageRevisionSlice, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotGetRevisions.Wrap(err)
 	}
 
 	revs, err := repo.PageRevisions(
@@ -96,11 +103,8 @@ func (pr *pageRepo) RevisionsByPageID(id int) (*repo.PageRevisionSlice, error) {
 		qm.Load(repo.PageRevisionRels.Reviewer),
 		qm.Load(repo.PageRevisionRels.Page)).All(ctx, tx)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		return nil, errCanNotGetRevisions.Wrap(err)
 	}
-
-	tx.Commit()
 
 	return &revs, nil
 }
@@ -110,13 +114,13 @@ func (pr *pageRepo) ApproveRevision(id int, stage string) (*repo.Page, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotApproveRevision.Wrap(err)
 	}
 
 	rev, err := repo.FindPageRevision(ctx, tx, id)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errCanNotApproveRevision.Wrap(err)
 	}
 
 	pg := &repo.Page{
@@ -129,17 +133,16 @@ func (pr *pageRepo) ApproveRevision(id int, stage string) (*repo.Page, error) {
 	_, err = pg.Update(ctx, tx, boil.Whitelist("approved_revision", "stage", "updated_at"))
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errCanNotApproveRevision.Wrap(err)
 	}
 
 	err = pg.Reload(ctx, tx)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errCanNotApproveRevision.Wrap(err)
 	}
 
 	tx.Commit()
-
 	return pg, nil
 }
 
@@ -148,7 +151,7 @@ func (pr *pageRepo) RevisionByID(id int) (*repo.PageRevision, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotGetRevision.Wrap(err)
 	}
 
 	pageRev, err := repo.PageRevisions(
@@ -156,18 +159,17 @@ func (pr *pageRepo) RevisionByID(id int) (*repo.PageRevision, error) {
 		qm.Load(repo.PageRevisionRels.Reviewer),
 		qm.Load(repo.PageRevisionRels.Page)).One(ctx, tx)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		return nil, errCanNotGetRevision.Wrap(err)
 	}
 
-	tx.Commit()
 	return pageRev, nil
 }
+
 func (pr *pageRepo) AllRevisions() (*repo.PageRevisionSlice, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotGetRevisions.Wrap(err)
 	}
 
 	revs, err := repo.PageRevisions(
@@ -175,11 +177,8 @@ func (pr *pageRepo) AllRevisions() (*repo.PageRevisionSlice, error) {
 		qm.Load(repo.PageRevisionRels.Reviewer),
 		qm.Load(repo.PageRevisionRels.Page)).All(ctx, tx)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		return nil, errCanNotGetRevisions.Wrap(err)
 	}
-
-	tx.Commit()
 
 	return &revs, nil
 }

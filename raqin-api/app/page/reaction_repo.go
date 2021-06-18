@@ -3,9 +3,18 @@ package page
 import (
 	"context"
 	"raqin-api/storage/repo"
+	"raqin-api/utils/irror"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+)
+
+var (
+	errCanNotInsertReaction = irror.New("can not insert reaction")
+	errCanNotUpdateReaction = irror.New("can not update reaction")
+	errCanNotGetReactions   = irror.New("can not get reactions")
+
+	errCanNotGetMostApprovedRevision = irror.New("can not get most approved revision")
 )
 
 func (pr *pageRepo) NewReaction(pReact *repo.PageRevisionReaction) error {
@@ -13,13 +22,13 @@ func (pr *pageRepo) NewReaction(pReact *repo.PageRevisionReaction) error {
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return errCanNotInsertReaction.Wrap(err)
 	}
 
 	err = pReact.Insert(ctx, tx, boil.Infer())
 	if err != nil {
 		tx.Rollback()
-		return err
+		return errCanNotInsertReaction.Wrap(err)
 	}
 
 	tx.Commit()
@@ -31,13 +40,13 @@ func (pr *pageRepo) UpdateReaction(pReact *repo.PageRevisionReaction) (int64, er
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return 0, errCanNotUpdateReaction.Wrap(err)
 	}
 
 	n, err := pReact.Update(ctx, tx, boil.Whitelist("reaction", "updated_at"))
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return 0, errCanNotUpdateReaction.Wrap(err)
 	}
 
 	tx.Commit()
@@ -48,7 +57,7 @@ func (pr *pageRepo) ReactionsByRevisionID(id int) (*repo.PageRevisionReactionSli
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotGetReactions.Wrap(err)
 	}
 
 	reactions, err := repo.PageRevisionReactions(
@@ -56,11 +65,8 @@ func (pr *pageRepo) ReactionsByRevisionID(id int) (*repo.PageRevisionReactionSli
 		qm.Load(repo.PageRevisionReactionRels.PageRevision),
 		qm.Load(repo.PageRevisionReactionRels.Reactor)).All(ctx, tx)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		return nil, errCanNotGetReactions.Wrap(err)
 	}
-
-	tx.Commit()
 
 	return &reactions, nil
 }
@@ -70,14 +76,13 @@ func (pr *pageRepo) MostApprovedRevisionByPageID(id int) (*repo.PageRevision, er
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotGetMostApprovedRevision.Wrap(err)
 	}
 
 	revs, err := repo.PageRevisions(
 		qm.Where("page_id = ?", id)).All(ctx, tx)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		return nil, errCanNotGetMostApprovedRevision.Wrap(err)
 	}
 
 	var approved int = 0
@@ -89,8 +94,7 @@ func (pr *pageRepo) MostApprovedRevisionByPageID(id int) (*repo.PageRevision, er
 				qm.Where("reaction = ?", repo.PageRevisionReactionReactionAPPROVE)).
 				Count(ctx, tx)
 			if err != nil {
-				tx.Rollback()
-				return nil, err
+				return nil, errCanNotGetMostApprovedRevision.Wrap(err)
 			}
 
 			if n > mostCount {
@@ -99,8 +103,6 @@ func (pr *pageRepo) MostApprovedRevisionByPageID(id int) (*repo.PageRevision, er
 			mostCount = n
 		}
 	}
-
-	tx.Commit()
 
 	return revs[approved], nil
 }

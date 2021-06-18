@@ -3,10 +3,15 @@ package page
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"raqin-api/storage/repo"
+	"raqin-api/utils/irror"
 
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+)
+
+var (
+	errCanNotFindPage             = irror.New("can not find page")
+	errCanNotFindPageWithRevision = irror.New("can not find page with revision")
 )
 
 type PageRepo interface {
@@ -51,17 +56,16 @@ func (pr *pageRepo) PageByID(id int) (*repo.Page, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotFindPage.Wrap(err)
 	}
 
 	page, err := repo.Pages(
 		qm.Where("id = ?", id)).One(ctx, tx)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errCanNotFindPage.Wrap(err)
 	}
 
-	tx.Commit()
 	return page, nil
 }
 
@@ -69,7 +73,7 @@ func (pr *pageRepo) PageByRevisionID(id int) (*repo.Page, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotFindPageWithRevision.Wrap(err)
 	}
 
 	rev, err := pr.RevisionByID(id)
@@ -81,13 +85,12 @@ func (pr *pageRepo) PageByRevisionID(id int) (*repo.Page, error) {
 		qm.Where("approved_revision = ?", id)).One(ctx, tx)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errCanNotFindPageWithRevision.Wrap(err)
 	}
 
 	if page.ID != rev.PageID {
-		return nil, errors.New("page and revision are not related")
+		return nil, irror.New("page and revision are not related").Wrap(err)
 	}
 
-	tx.Commit()
 	return page, nil
 }

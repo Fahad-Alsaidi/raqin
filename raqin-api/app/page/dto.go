@@ -4,11 +4,6 @@ import (
 	"time"
 )
 
-type AddPageText struct {
-	ID   int    `json:"id"`
-	Text string `json:"text"`
-}
-
 type PageResponse struct {
 	ID      int    `json:"id"`
 	Text    string `json:"text"`
@@ -18,17 +13,17 @@ type PageResponse struct {
 }
 
 type NewPageRevision struct {
-	PageID int    `json:"id"`
-	Text   string `json:"text"`
+	PageID int    `json:"id" validate:"required,number"`
+	Text   string `json:"text" validate:"required,ascii"`
 }
 
 type UpdatePageRevision struct {
-	ID   int    `json:"id"`
-	Text string `json:"text"`
+	ID   int    `json:"id" validate:"required,number"`
+	Text string `json:"text" validate:"required,ascii"`
 }
 
 type ByID struct {
-	ID int `query:"id"`
+	ID int `query:"id" validate:"required,number"`
 }
 
 type PageRevisionResponse struct {
@@ -46,25 +41,25 @@ type Reviewer struct {
 }
 
 type NewReaction struct {
-	RevisionID int    `json:"revision_id"`
-	Reaction   string `json:"reaction"`
-	PageID     int    `json:"page_id"`
+	RevisionID int    `json:"revision_id" validate:"required,number"`
+	Reaction   string `json:"reaction" validate:"required,alpha"`
+	PageID     int    `json:"page_id" validate:"required,number"`
 }
 
 type UpdateReaction struct {
-	ID       int    `json:"id"`
-	Reaction string `json:"reaction"`
+	ID       int    `json:"id" validate:"required,number"`
+	Reaction string `json:"reaction" validate:"required,alpha"`
 }
 
 type NewComment struct {
-	RevisionID  int    `json:"revision_id"`
-	CommenterID int    `json:"commentor_id"`
-	Comment     string `json:"comment"`
+	RevisionID  int    `json:"revision_id" validate:"required,number"`
+	CommenterID int    `json:"commentor_id" validate:"required,number"`
+	Comment     string `json:"comment" validate:"required,alpha"`
 }
 
 type UpdateComment struct {
-	ID      int    `json:"id"`
-	Comment string `json:"comment"`
+	ID      int    `json:"id" validate:"required,number"`
+	Comment string `json:"comment" validate:"required,alpha"`
 }
 
 type CommentResponse struct {

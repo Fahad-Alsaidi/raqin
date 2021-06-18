@@ -3,9 +3,17 @@ package page
 import (
 	"context"
 	"raqin-api/storage/repo"
+	"raqin-api/utils/irror"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+)
+
+var (
+	errCanNotInsertComment = irror.New("can not insert comment")
+	errCanNotDeleteComment = irror.New("can not delete comment")
+	errCanNotUpdateComment = irror.New("can not update comment")
+	errCanNotGetComments   = irror.New("can not get comments")
 )
 
 func (pr *pageRepo) NewComment(comment *repo.PageRevisionComment) error {
@@ -14,13 +22,13 @@ func (pr *pageRepo) NewComment(comment *repo.PageRevisionComment) error {
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return errCanNotInsertComment.Wrap(err)
 	}
 
 	err = comment.Insert(ctx, tx, boil.Infer())
 	if err != nil {
 		tx.Rollback()
-		return err
+		return errCanNotInsertComment.Wrap(err)
 	}
 
 	tx.Commit()
@@ -33,13 +41,13 @@ func (pr *pageRepo) UpdateComment(comment *repo.PageRevisionComment) (int64, err
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return 0, errCanNotUpdateComment.Wrap(err)
 	}
 
 	n, err := comment.Update(ctx, tx, boil.Whitelist("comment", "updated_at"))
 	if err != nil {
 		tx.Rollback()
-		return n, err
+		return n, errCanNotUpdateComment.Wrap(err)
 	}
 
 	tx.Commit()
@@ -52,13 +60,13 @@ func (pr *pageRepo) DeleteComment(comment *repo.PageRevisionComment) (int64, err
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return 0, errCanNotDeleteComment.Wrap(err)
 	}
 
 	n, err := comment.Update(ctx, tx, boil.Whitelist("deleted_at"))
 	if err != nil {
 		tx.Rollback()
-		return n, err
+		return n, errCanNotDeleteComment.Wrap(err)
 	}
 
 	tx.Commit()
@@ -69,7 +77,7 @@ func (pr *pageRepo) CommentsByRevisionID(id int) (*repo.PageRevisionCommentSlice
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotGetComments.Wrap(err)
 	}
 
 	comments, err := repo.PageRevisionComments(
@@ -78,11 +86,8 @@ func (pr *pageRepo) CommentsByRevisionID(id int) (*repo.PageRevisionCommentSlice
 		qm.Load(repo.PageRevisionCommentRels.PageRevision),
 		qm.Load(repo.PageRevisionCommentRels.Commenter)).All(ctx, tx)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		return nil, errCanNotGetComments.Wrap(err)
 	}
-
-	tx.Commit()
 
 	return &comments, nil
 }
