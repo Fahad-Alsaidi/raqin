@@ -20,7 +20,7 @@ func (uCtrl *userController) SignUp(c echo.Context) error {
 
 	user := UserSignUp{}
 	if err := c.Bind(&user); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	_, err := uCtrl.userService.SignUp(user)
@@ -34,21 +34,14 @@ func (uCtrl *userController) SignUp(c echo.Context) error {
 		return err
 	}
 
-	s := struct {
-		T string `json:"token"`
-	}{
-		T: token,
-	}
-
-	return c.JSON(http.StatusOK, s)
-
+	return c.JSON(http.StatusOK, token)
 }
 
 func (uCtrl *userController) SignIn(c echo.Context) error {
 
 	user := UserSignIn{}
 	if err := c.Bind(&user); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	resp, err := uCtrl.userService.SignIn(user)
@@ -62,21 +55,14 @@ func (uCtrl *userController) SignIn(c echo.Context) error {
 		return err
 	}
 
-	s := struct {
-		T string `json:"token"`
-	}{
-		T: token,
-	}
-
-	return c.JSON(http.StatusOK, s)
-
+	return c.JSON(http.StatusOK, token)
 }
 
 func (uCtrl *userController) DeleteUser(c echo.Context) error {
 
 	user := UserIDRequest{}
 	if err := c.Bind(&user); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	err := uCtrl.userService.DeleteUser(user)
@@ -85,23 +71,21 @@ func (uCtrl *userController) DeleteUser(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, nil)
-
 }
 
 func (uCtrl *userController) UpdateUser(c echo.Context) error {
 
 	user := UpdateUserRequest{}
 	if err := c.Bind(&user); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	resp, err := uCtrl.userService.UpdateUser(user)
+	err := uCtrl.userService.UpdateUser(user)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, &resp)
-
+	return c.JSON(http.StatusOK, nil)
 }
 
 func (uCtrl *userController) AllUsers(c echo.Context) error {
@@ -112,30 +96,13 @@ func (uCtrl *userController) AllUsers(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, users)
-
-}
-
-func (uCtrl *userController) UserByID(c echo.Context) error {
-
-	user := GetUserByIDRequest{}
-	if err := c.Bind(&user); err != nil {
-		return err
-	}
-
-	users, err := uCtrl.userService.UserByID(user)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, &users)
-
 }
 
 func (uCtrl *userController) ChangePassword(c echo.Context) error {
 
 	user := ChangePasswordRequest{}
 	if err := c.Bind(&user); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	err := uCtrl.userService.ChangePassword(user)
@@ -143,15 +110,14 @@ func (uCtrl *userController) ChangePassword(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, "password changed")
-
+	return c.JSON(http.StatusOK, nil)
 }
 
 func (uCtrl *userController) PromoteUser(c echo.Context) error {
 
 	user := UserIDRequest{}
 	if err := c.Bind(&user); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	err := uCtrl.userService.PromoteUser(user)
@@ -159,15 +125,14 @@ func (uCtrl *userController) PromoteUser(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, "user promoted")
-
+	return c.JSON(http.StatusOK, nil)
 }
 
 func (uCtrl *userController) DemoteUser(c echo.Context) error {
 
 	user := UserIDRequest{}
 	if err := c.Bind(&user); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 
 	err := uCtrl.userService.DemoteUser(user)
@@ -175,6 +140,5 @@ func (uCtrl *userController) DemoteUser(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, "user demoted")
-
+	return c.JSON(http.StatusOK, nil)
 }
