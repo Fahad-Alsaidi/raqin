@@ -23,7 +23,7 @@ func (aCtrl *authorController) NewAuthor(c echo.Context) error {
 
 	resp, err := aCtrl.authorservice.NewAuthor(author)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, resp)
@@ -38,7 +38,7 @@ func (aCtrl *authorController) DeleteAuthor(c echo.Context) error {
 
 	err := aCtrl.authorservice.DeleteAuthor(author)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, nil)
@@ -53,7 +53,7 @@ func (aCtrl *authorController) UpdateAuthor(c echo.Context) error {
 
 	err := aCtrl.authorservice.UpdateAuthor(author)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, err)
@@ -63,7 +63,7 @@ func (aCtrl *authorController) AllAuthors(c echo.Context) error {
 
 	authors, err := aCtrl.authorservice.AllAuthors()
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, authors)

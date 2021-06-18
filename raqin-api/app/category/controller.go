@@ -24,7 +24,7 @@ func (aCtrl *categoryController) NewCategory(c echo.Context) error {
 
 	resp, err := aCtrl.categoryService.NewCategory(category)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, resp)
@@ -39,7 +39,7 @@ func (aCtrl *categoryController) DeleteCategory(c echo.Context) error {
 
 	err := aCtrl.categoryService.DeleteCategory(category)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, nil)
@@ -54,7 +54,7 @@ func (aCtrl *categoryController) UpdateCategory(c echo.Context) error {
 
 	err := aCtrl.categoryService.UpdateCategory(category)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, nil)
@@ -64,7 +64,7 @@ func (aCtrl *categoryController) AllCategories(c echo.Context) error {
 
 	categories, err := aCtrl.categoryService.AllCategories()
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, categories)
