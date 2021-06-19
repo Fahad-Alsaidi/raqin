@@ -12,12 +12,14 @@ import (
 var (
 	errCanNotFindPage             = irror.New("can not find page")
 	errCanNotFindPageWithRevision = irror.New("can not find page with revision")
+	errCanNotFindBookPages        = irror.New("can not find book pages")
 )
 
 type PageRepo interface {
 	// PAGE
 	PageByID(id int) (*repo.Page, error)
 	PageByRevisionID(id int) (*repo.Page, error)
+	PagesByBookID(id int) (repo.PageSlice, error)
 
 	// PAGE_REVISION
 	NewRevision(pageRev *repo.PageRevision) (*repo.PageRevision, error)
@@ -93,4 +95,24 @@ func (pr *pageRepo) PageByRevisionID(id int) (*repo.Page, error) {
 	}
 
 	return page, nil
+}
+
+func (pr *pageRepo) PagesByBookID(id int) (repo.PageSlice, error) {
+
+	ctx := context.Background()
+	tx, err := pr.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, errCanNotFindBookPages.Wrap(err)
+	}
+
+	pages, err := repo.Pages(
+		qm.Where("book_id = ?", id),
+		qm.Load(repo.PageRels.ApprovedRevisionPageRevision),
+	).All(ctx, tx)
+	if err != nil {
+		tx.Rollback()
+		return nil, errCanNotFindBookPages.Wrap(err)
+	}
+
+	return pages, nil
 }

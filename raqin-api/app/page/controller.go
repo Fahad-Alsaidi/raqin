@@ -14,6 +14,21 @@ func NewPageController(pageservice PageService) *pageController {
 	return &pageController{pageservice: pageservice}
 }
 
+func (pCtrl *pageController) PagesByBookID(c echo.Context) error {
+
+	bookID := ByID{}
+	if err := c.Bind(&bookID); err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	resp, err := pCtrl.pageservice.PagesByBookID(bookID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, resp)
+}
+
 func (pCtrl *pageController) NewPageRevision(c echo.Context) error {
 
 	pgRev := NewPageRevision{}

@@ -11,6 +11,8 @@ import (
 )
 
 type PageService interface {
+	PagesByBookID(ByID) ([]PageResponse, error)
+
 	NewRevision(NewPageRevision) error
 	UpdateRevision(UpdatePageRevision) error
 	DeleteRevision(ByID) error
@@ -33,6 +35,37 @@ type pageService struct {
 
 func NewPageService(pageRepo PageRepo) *pageService {
 	return &pageService{pageRepo}
+}
+
+func (bgSrvc *pageService) PagesByBookID(in ByID) ([]PageResponse, error) {
+
+	if err := validator.Validate(in); err != nil {
+		return nil, err
+	}
+
+	pages, err := bgSrvc.pageRepo.PagesByBookID(in.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	pgs := []PageResponse{}
+	for _, page := range pages {
+		var pgText string
+		if page.R.ApprovedRevisionPageRevision != nil {
+			pgText = page.R.ApprovedRevisionPageRevision.PageText.String
+		}
+
+		pg := PageResponse{
+			ID:      page.ID,
+			Text:    pgText,
+			PageNum: page.Number,
+			Stage:   page.Stage,
+			BookID:  page.BookID,
+		}
+		pgs = append(pgs, pg)
+	}
+
+	return pgs, nil
 }
 
 func (bgSrvc *pageService) NewRevision(pageRev NewPageRevision) error {
