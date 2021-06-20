@@ -2,6 +2,7 @@ package category
 
 import (
 	"net/http"
+	"raqin-api/utils/irror"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,7 +19,7 @@ func (aCtrl *categoryController) NewCategory(c echo.Context) error {
 
 	category := NewCategoryRequest{}
 	if err := c.Bind(&category); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, irror.New("can not bind data").Wrap(err))
 	}
 
 	resp, err := aCtrl.categoryService.NewCategory(category)
@@ -27,14 +28,13 @@ func (aCtrl *categoryController) NewCategory(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, resp)
-
 }
 
 func (aCtrl *categoryController) DeleteCategory(c echo.Context) error {
 
 	category := DeleteCategoryRequest{}
 	if err := c.Bind(&category); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, irror.New("can not bind data").Wrap(err))
 	}
 
 	err := aCtrl.categoryService.DeleteCategory(category)
@@ -43,23 +43,21 @@ func (aCtrl *categoryController) DeleteCategory(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, nil)
-
 }
 
 func (aCtrl *categoryController) UpdateCategory(c echo.Context) error {
 
 	category := UpdateCategoryRequest{}
 	if err := c.Bind(&category); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, irror.New("can not bind data").Wrap(err))
 	}
 
-	resp, err := aCtrl.categoryService.UpdateCategory(category)
+	err := aCtrl.categoryService.UpdateCategory(category)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, &resp)
-
+	return c.JSON(http.StatusOK, nil)
 }
 
 func (aCtrl *categoryController) AllCategories(c echo.Context) error {
@@ -70,21 +68,4 @@ func (aCtrl *categoryController) AllCategories(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, categories)
-
-}
-
-func (aCtrl *categoryController) CategoryByID(c echo.Context) error {
-
-	category := GetCategoryByIDRequest{}
-	if err := c.Bind(&category); err != nil {
-		return err
-	}
-
-	categori, err := aCtrl.categoryService.CategoryByID(category)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, &categori)
-
 }

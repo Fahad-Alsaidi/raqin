@@ -2,6 +2,8 @@ package user
 
 import (
 	"raqin-api/storage/repo"
+	"raqin-api/utils/irror"
+	"raqin-api/utils/validator"
 	"time"
 
 	"github.com/volatiletech/null/v8"
@@ -12,9 +14,8 @@ type UserService interface {
 	SignUp(in UserSignUp) (*UserResponse, error)
 	SignIn(in UserSignIn) (*UserResponse, error)
 	DeleteUser(in UserIDRequest) error
-	UpdateUser(in UpdateUserRequest) (*UserResponse, error)
+	UpdateUser(in UpdateUserRequest) error
 	AllUsers() ([]UserResponse, error)
-	UserByID(in GetUserByIDRequest) (*UserResponse, error)
 	PromoteUser(in UserIDRequest) error
 	DemoteUser(in UserIDRequest) error
 	ChangePassword(in ChangePasswordRequest) error
@@ -30,9 +31,13 @@ func NewUserService(userRepo UserRepo) *userService {
 
 func (usSrvc *userService) SignUp(in UserSignUp) (*UserResponse, error) {
 
+	if err := validator.Validate(in); err != nil {
+		return nil, err
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(in.Password), 8)
 	if err != nil {
-		return nil, err
+		return nil, irror.New("can not sign up").Wrap(err)
 	}
 
 	user := &repo.User{
@@ -53,10 +58,13 @@ func (usSrvc *userService) SignUp(in UserSignUp) (*UserResponse, error) {
 		ID: int64(c.ID),
 	}
 	return res, nil
-
 }
 
 func (usSrvc *userService) SignIn(in UserSignIn) (*UserResponse, error) {
+
+	if err := validator.Validate(in); err != nil {
+		return nil, err
+	}
 
 	user := &repo.User{
 		Email: in.Email,
@@ -69,7 +77,7 @@ func (usSrvc *userService) SignIn(in UserSignIn) (*UserResponse, error) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(in.Password))
 	if err != nil {
-		return nil, err
+		return nil, irror.New("can not sign in").Wrap(err)
 	}
 
 	return &UserResponse{
@@ -79,25 +87,31 @@ func (usSrvc *userService) SignIn(in UserSignIn) (*UserResponse, error) {
 		Gender:    usr.Gender.String,
 		Role:      usr.Role,
 	}, nil
-
 }
 
 func (usSrvc *userService) DeleteUser(in UserIDRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	user := &repo.User{
 		ID: int(in.ID),
 	}
 
-	n, err := usSrvc.userRepo.DeleteUser(user)
-	if err != nil || n == 0 {
+	_, err := usSrvc.userRepo.DeleteUser(user)
+	if err != nil {
 		return err
 	}
 
 	return nil
-
 }
 
-func (usSrvc *userService) UpdateUser(in UpdateUserRequest) (*UserResponse, error) {
+func (usSrvc *userService) UpdateUser(in UpdateUserRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	user := &repo.User{
 		ID:        in.ID,
@@ -108,22 +122,12 @@ func (usSrvc *userService) UpdateUser(in UpdateUserRequest) (*UserResponse, erro
 		UpdatedAt: time.Now(),
 	}
 
-	ca, err := usSrvc.userRepo.UpdateUser(user)
+	_, err := usSrvc.userRepo.UpdateUser(user)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &UserResponse{
-		ID:        int64(ca.ID),
-		FirstName: ca.FirstName,
-		LastName:  ca.LastName,
-		Email:     ca.Email,
-		Gender:    ca.Gender.String,
-		Role:      ca.Role,
-		CreatedAt: ca.CreatedAt,
-		UpdatedAt: ca.UpdatedAt,
-	}, nil
-
+	return nil
 }
 
 func (usSrvc *userService) AllUsers() ([]UserResponse, error) {
@@ -149,30 +153,13 @@ func (usSrvc *userService) AllUsers() ([]UserResponse, error) {
 	}
 
 	return usersResponse, nil
-
-}
-
-func (usSrvc *userService) UserByID(in GetUserByIDRequest) (*UserResponse, error) {
-
-	user, err := usSrvc.userRepo.UserByID(in.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &UserResponse{
-		ID:        int64(user.ID),
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     user.Email,
-		Gender:    user.Gender.String,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}, nil
-
 }
 
 func (usSrvc *userService) PromoteUser(in UserIDRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	_, err := usSrvc.userRepo.PromoteUser(in.ID)
 	if err != nil {
@@ -184,6 +171,10 @@ func (usSrvc *userService) PromoteUser(in UserIDRequest) error {
 
 func (usSrvc *userService) ChangePassword(in ChangePasswordRequest) error {
 
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
+
 	user, err := usSrvc.userRepo.UserByID(in.ID)
 	if err != nil {
 		return err
@@ -191,12 +182,12 @@ func (usSrvc *userService) ChangePassword(in ChangePasswordRequest) error {
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.OldPassword))
 	if err != nil {
-		return err
+		return irror.New("can not change password").Wrap(err)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(in.NewPassword), 8)
 	if err != nil {
-		return err
+		return irror.New("can not change password").Wrap(err)
 	}
 
 	newUser := &repo.User{
@@ -213,6 +204,10 @@ func (usSrvc *userService) ChangePassword(in ChangePasswordRequest) error {
 }
 
 func (usSrvc *userService) DemoteUser(in UserIDRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	_, err := usSrvc.userRepo.DemoteUser(in.ID)
 	if err != nil {

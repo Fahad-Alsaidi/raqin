@@ -3,16 +3,23 @@ package page
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"raqin-api/storage/repo"
+	"raqin-api/utils/irror"
 
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+)
+
+var (
+	errCanNotFindPage             = irror.New("can not find page")
+	errCanNotFindPageWithRevision = irror.New("can not find page with revision")
+	errCanNotFindBookPages        = irror.New("can not find book pages")
 )
 
 type PageRepo interface {
 	// PAGE
 	PageByID(id int) (*repo.Page, error)
 	PageByRevisionID(id int) (*repo.Page, error)
+	PagesByBookID(id int) (repo.PageSlice, error)
 
 	// PAGE_REVISION
 	NewRevision(pageRev *repo.PageRevision) (*repo.PageRevision, error)
@@ -51,17 +58,16 @@ func (pr *pageRepo) PageByID(id int) (*repo.Page, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotFindPage.Wrap(err)
 	}
 
 	page, err := repo.Pages(
 		qm.Where("id = ?", id)).One(ctx, tx)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errCanNotFindPage.Wrap(err)
 	}
 
-	tx.Commit()
 	return page, nil
 }
 
@@ -69,7 +75,7 @@ func (pr *pageRepo) PageByRevisionID(id int) (*repo.Page, error) {
 	ctx := context.Background()
 	tx, err := pr.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, errCanNotFindPageWithRevision.Wrap(err)
 	}
 
 	rev, err := pr.RevisionByID(id)
@@ -81,13 +87,32 @@ func (pr *pageRepo) PageByRevisionID(id int) (*repo.Page, error) {
 		qm.Where("approved_revision = ?", id)).One(ctx, tx)
 	if err != nil {
 		tx.Rollback()
-		return nil, err
+		return nil, errCanNotFindPageWithRevision.Wrap(err)
 	}
 
 	if page.ID != rev.PageID {
-		return nil, errors.New("page and revision are not related")
+		return nil, irror.New("page and revision are not related").Wrap(err)
 	}
 
-	tx.Commit()
 	return page, nil
+}
+
+func (pr *pageRepo) PagesByBookID(id int) (repo.PageSlice, error) {
+
+	ctx := context.Background()
+	tx, err := pr.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, errCanNotFindBookPages.Wrap(err)
+	}
+
+	pages, err := repo.Pages(
+		qm.Where("book_id = ?", id),
+		qm.Load(repo.PageRels.ApprovedRevisionPageRevision),
+	).All(ctx, tx)
+	if err != nil {
+		tx.Rollback()
+		return nil, errCanNotFindBookPages.Wrap(err)
+	}
+
+	return pages, nil
 }

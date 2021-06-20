@@ -17,7 +17,6 @@ func userRouter(gRoute *echo.Group) {
 	gRoute.DELETE("/delete", userCtrl.DeleteUser)
 	gRoute.PATCH("/update", userCtrl.UpdateUser)
 	gRoute.GET("/all", userCtrl.AllUsers)
-	gRoute.GET("", userCtrl.UserByID)
 	gRoute.GET("/promote", userCtrl.PromoteUser)
 	gRoute.GET("/demote", userCtrl.DemoteUser)
 	gRoute.PATCH("/chpwd", userCtrl.ChangePassword)

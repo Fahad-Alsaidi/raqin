@@ -2,14 +2,15 @@ package category
 
 import (
 	"raqin-api/storage/repo"
+	"raqin-api/utils/validator"
+	"time"
 )
 
 type CategoryService interface {
 	NewCategory(in NewCategoryRequest) (*CategoryResponse, error)
 	DeleteCategory(in DeleteCategoryRequest) error
-	UpdateCategory(in UpdateCategoryRequest) (*CategoryResponse, error)
+	UpdateCategory(in UpdateCategoryRequest) error
 	AllCategories() ([]CategoryResponse, error)
-	CategoryByID(in GetCategoryByIDRequest) (*CategoryResponse, error)
 }
 
 type categoryService struct {
@@ -21,6 +22,10 @@ func NewCategoryService(categoryRepo CategoryRepo) *categoryService {
 }
 
 func (catSrvc *categoryService) NewCategory(in NewCategoryRequest) (*CategoryResponse, error) {
+
+	if err := validator.Validate(in); err != nil {
+		return nil, err
+	}
 
 	category := &repo.Category{
 		Name: in.Name,
@@ -38,43 +43,44 @@ func (catSrvc *categoryService) NewCategory(in NewCategoryRequest) (*CategoryRes
 		UpdatedAt: c.UpdatedAt,
 	}
 	return res, nil
-
 }
 
 func (catSrvc *categoryService) DeleteCategory(in DeleteCategoryRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	category := &repo.Category{
 		ID: int(in.ID),
 	}
 
-	n, err := catSrvc.categoryRepo.DeleteCategory(category)
-	if err != nil || n == 0 {
+	_, err := catSrvc.categoryRepo.DeleteCategory(category)
+	if err != nil {
 		return err
 	}
 
 	return nil
-
 }
 
-func (catSrvc *categoryService) UpdateCategory(in UpdateCategoryRequest) (*CategoryResponse, error) {
+func (catSrvc *categoryService) UpdateCategory(in UpdateCategoryRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	category := &repo.Category{
-		ID:   in.ID,
-		Name: in.Name,
+		ID:        in.ID,
+		Name:      in.Name,
+		UpdatedAt: time.Now(),
 	}
 
-	ca, err := catSrvc.categoryRepo.UpdateCategory(category)
+	_, err := catSrvc.categoryRepo.UpdateCategory(category)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &CategoryResponse{
-		ID:        int64(ca.ID),
-		Name:      ca.Name,
-		CreatedAt: ca.CreatedAt,
-		UpdatedAt: ca.UpdatedAt,
-	}, nil
-
+	return nil
 }
 
 func (catSrvc *categoryService) AllCategories() ([]CategoryResponse, error) {
@@ -96,21 +102,4 @@ func (catSrvc *categoryService) AllCategories() ([]CategoryResponse, error) {
 	}
 
 	return categoriesResponse, nil
-
-}
-
-func (catSrvc *categoryService) CategoryByID(in GetCategoryByIDRequest) (*CategoryResponse, error) {
-
-	category, err := catSrvc.categoryRepo.CategoryByID(in.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &CategoryResponse{
-		ID:        int64(category.ID),
-		Name:      category.Name,
-		CreatedAt: category.CreatedAt,
-		UpdatedAt: category.UpdatedAt,
-	}, nil
-
 }

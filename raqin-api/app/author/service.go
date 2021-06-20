@@ -2,14 +2,16 @@ package author
 
 import (
 	"raqin-api/storage/repo"
+	"time"
+
+	"raqin-api/utils/validator"
 )
 
 type AuthorService interface {
 	NewAuthor(in NewAuthorRequest) (*AuthorResponse, error)
-	DeleteAuthor(in DeleteAuthorRequest) error
-	UpdateAuthor(in UpdateAuthorRequest) (*AuthorResponse, error)
-	AllAuthors() ([]AuthorResponse, error)
-	AuthorByID(in GetAuthorByIDRequest) (*AuthorResponse, error)
+	DeleteAuthor(in ByID) error
+	UpdateAuthor(in UpdateAuthorRequest) error
+	AllAuthors() (*[]AuthorResponse, error)
 }
 
 type authorService struct {
@@ -21,6 +23,10 @@ func NewAuthorService(authorRepo AuthorRepo) *authorService {
 }
 
 func (auSrvc *authorService) NewAuthor(in NewAuthorRequest) (*AuthorResponse, error) {
+
+	if err := validator.Validate(in); err != nil {
+		return nil, err
+	}
 
 	author := &repo.Author{
 		FirstName: in.FirstName,
@@ -40,25 +46,32 @@ func (auSrvc *authorService) NewAuthor(in NewAuthorRequest) (*AuthorResponse, er
 		UpdatedAt: a.UpdatedAt,
 	}
 	return res, nil
-
 }
 
-func (auSrvc *authorService) DeleteAuthor(in DeleteAuthorRequest) error {
+func (auSrvc *authorService) DeleteAuthor(in ByID) error {
 
-	author := &repo.Author{
-		ID: in.ID,
+	if err := validator.Validate(in); err != nil {
+		return err
 	}
 
-	n, err := auSrvc.authorRepo.DeleteAuthor(author)
-	if err != nil || n == 0 {
+	author := &repo.Author{
+		ID:        in.ID,
+		DeletedAt: time.Now(),
+	}
+
+	_, err := auSrvc.authorRepo.DeleteAuthor(author)
+	if err != nil {
 		return err
 	}
 
 	return nil
-
 }
 
-func (auSrvc *authorService) UpdateAuthor(in UpdateAuthorRequest) (*AuthorResponse, error) {
+func (auSrvc *authorService) UpdateAuthor(in UpdateAuthorRequest) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	author := &repo.Author{
 		ID:        in.ID,
@@ -66,22 +79,15 @@ func (auSrvc *authorService) UpdateAuthor(in UpdateAuthorRequest) (*AuthorRespon
 		LastName:  in.LastName,
 	}
 
-	au, err := auSrvc.authorRepo.UpdateAuthor(author)
+	_, err := auSrvc.authorRepo.UpdateAuthor(author)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &AuthorResponse{
-		ID:        int64(au.ID),
-		FirstName: au.FirstName,
-		LastName:  au.LastName,
-		CreatedAt: au.CreatedAt,
-		UpdatedAt: au.UpdatedAt,
-	}, nil
-
+	return nil
 }
 
-func (auSrvc *authorService) AllAuthors() ([]AuthorResponse, error) {
+func (auSrvc *authorService) AllAuthors() (*[]AuthorResponse, error) {
 
 	authors, err := auSrvc.authorRepo.AllAuthors()
 	if err != nil {
@@ -89,7 +95,7 @@ func (auSrvc *authorService) AllAuthors() ([]AuthorResponse, error) {
 	}
 
 	authorsResponse := []AuthorResponse{}
-	for _, author := range authors {
+	for _, author := range *authors {
 		au := AuthorResponse{
 			ID:        int64(author.ID),
 			FirstName: author.FirstName,
@@ -100,23 +106,5 @@ func (auSrvc *authorService) AllAuthors() ([]AuthorResponse, error) {
 		authorsResponse = append(authorsResponse, au)
 	}
 
-	return authorsResponse, nil
-
-}
-
-func (auSrvc *authorService) AuthorByID(in GetAuthorByIDRequest) (*AuthorResponse, error) {
-
-	author, err := auSrvc.authorRepo.AuthorByID(in.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &AuthorResponse{
-		ID:        int64(author.ID),
-		FirstName: author.FirstName,
-		LastName:  author.LastName,
-		CreatedAt: author.CreatedAt,
-		UpdatedAt: author.UpdatedAt,
-	}, nil
-
+	return &authorsResponse, nil
 }

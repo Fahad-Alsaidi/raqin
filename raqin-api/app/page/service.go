@@ -3,6 +3,7 @@ package page
 import (
 	"fmt"
 	"raqin-api/storage/repo"
+	"raqin-api/utils/validator"
 	"time"
 
 	"github.com/friendsofgo/errors"
@@ -10,6 +11,8 @@ import (
 )
 
 type PageService interface {
+	PagesByBookID(ByID) ([]PageResponse, error)
+
 	NewRevision(NewPageRevision) error
 	UpdateRevision(UpdatePageRevision) error
 	DeleteRevision(ByID) error
@@ -34,7 +37,42 @@ func NewPageService(pageRepo PageRepo) *pageService {
 	return &pageService{pageRepo}
 }
 
+func (bgSrvc *pageService) PagesByBookID(in ByID) ([]PageResponse, error) {
+
+	if err := validator.Validate(in); err != nil {
+		return nil, err
+	}
+
+	pages, err := bgSrvc.pageRepo.PagesByBookID(in.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	pgs := []PageResponse{}
+	for _, page := range pages {
+		var pgText string
+		if page.R.ApprovedRevisionPageRevision != nil {
+			pgText = page.R.ApprovedRevisionPageRevision.PageText.String
+		}
+
+		pg := PageResponse{
+			ID:      page.ID,
+			Text:    pgText,
+			PageNum: page.Number,
+			Stage:   page.Stage,
+			BookID:  page.BookID,
+		}
+		pgs = append(pgs, pg)
+	}
+
+	return pgs, nil
+}
+
 func (bgSrvc *pageService) NewRevision(pageRev NewPageRevision) error {
+
+	if err := validator.Validate(pageRev); err != nil {
+		return err
+	}
 
 	pg := &repo.PageRevision{
 		PageText:   null.StringFrom(pageRev.Text),
@@ -51,6 +89,10 @@ func (bgSrvc *pageService) NewRevision(pageRev NewPageRevision) error {
 }
 
 func (bgSrvc *pageService) UpdateRevision(pageRev UpdatePageRevision) error {
+
+	if err := validator.Validate(pageRev); err != nil {
+		return err
+	}
 
 	pg := &repo.PageRevision{
 		PageText: null.StringFrom(pageRev.Text),
@@ -78,6 +120,10 @@ func (bgSrvc *pageService) UpdateRevision(pageRev UpdatePageRevision) error {
 
 func (bgSrvc *pageService) DeleteRevision(pageRev ByID) error {
 
+	if err := validator.Validate(pageRev); err != nil {
+		return err
+	}
+
 	pg := &repo.PageRevision{
 		ID:        pageRev.ID,
 		DeletedAt: time.Now(),
@@ -103,6 +149,11 @@ func (bgSrvc *pageService) DeleteRevision(pageRev ByID) error {
 }
 
 func (bgSrvc *pageService) RevisionsByPageID(pageRev ByID) (*[]PageRevisionResponse, error) {
+
+	if err := validator.Validate(pageRev); err != nil {
+		return nil, err
+	}
+
 	revs, err := bgSrvc.pageRepo.RevisionsByPageID(pageRev.ID)
 	if err != nil {
 		return nil, err
@@ -128,6 +179,11 @@ func (bgSrvc *pageService) RevisionsByPageID(pageRev ByID) (*[]PageRevisionRespo
 }
 
 func (bgSrvc *pageService) ApproveRevision(pageRev ByID) (*PageResponse, error) {
+
+	if err := validator.Validate(pageRev); err != nil {
+		return nil, err
+	}
+
 	b, err := bgSrvc.pageRepo.ApproveRevision(pageRev.ID, "REV")
 	if err != nil {
 		return nil, err
@@ -142,6 +198,10 @@ func (bgSrvc *pageService) ApproveRevision(pageRev ByID) (*PageResponse, error) 
 }
 
 func (bgSrvc *pageService) NewReaction(reaction NewReaction) error {
+
+	if err := validator.Validate(reaction); err != nil {
+		return err
+	}
 
 	re := &repo.PageRevisionReaction{
 		Reaction:       reaction.Reaction,
@@ -179,6 +239,10 @@ func (bgSrvc *pageService) NewReaction(reaction NewReaction) error {
 
 func (bgSrvc *pageService) UpdateReaction(reaction UpdateReaction) error {
 
+	if err := validator.Validate(reaction); err != nil {
+		return err
+	}
+
 	re := &repo.PageRevisionReaction{
 		ID:       reaction.ID,
 		Reaction: reaction.Reaction,
@@ -197,6 +261,10 @@ func (bgSrvc *pageService) UpdateReaction(reaction UpdateReaction) error {
 
 func (bgSrvc *pageService) NewComment(in NewComment) error {
 
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
+
 	comment := &repo.PageRevisionComment{
 		PageRevisionID: in.RevisionID,
 		CommenterID:    in.CommenterID,
@@ -212,6 +280,10 @@ func (bgSrvc *pageService) NewComment(in NewComment) error {
 }
 
 func (bgSrvc *pageService) UpdateComment(in UpdateComment) error {
+
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
 
 	comment := &repo.PageRevisionComment{
 		ID:      in.ID,
@@ -232,6 +304,10 @@ func (bgSrvc *pageService) UpdateComment(in UpdateComment) error {
 
 func (bgSrvc *pageService) DeleteComment(in ByID) error {
 
+	if err := validator.Validate(in); err != nil {
+		return err
+	}
+
 	comment := &repo.PageRevisionComment{
 		ID:        in.ID,
 		DeletedAt: time.Now(),
@@ -250,6 +326,10 @@ func (bgSrvc *pageService) DeleteComment(in ByID) error {
 }
 
 func (bgSrvc *pageService) CommentsByRevisionID(in ByID) (*[]CommentResponse, error) {
+
+	if err := validator.Validate(in); err != nil {
+		return nil, err
+	}
 
 	comments, err := bgSrvc.pageRepo.CommentsByRevisionID(in.ID)
 	if err != nil {

@@ -16,7 +16,6 @@ func bookRouter(gRoute *echo.Group) {
 	gRoute.DELETE("/delete", bookCtrl.DeleteBook)
 	gRoute.POST("/update", bookCtrl.UpdateBook)
 	gRoute.GET("/all", bookCtrl.AllBooks)
-	gRoute.GET("", bookCtrl.BookByID)
 	gRoute.GET("/extract", bookCtrl.ExtractBook)
 	gRoute.GET("/add/author", bookCtrl.AddBookAuthor)
 	gRoute.GET("/add/category", bookCtrl.AddBookCategory)

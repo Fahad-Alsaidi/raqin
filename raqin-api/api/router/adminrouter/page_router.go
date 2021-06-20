@@ -13,6 +13,9 @@ func pageRouter(gRoute *echo.Group) {
 	pageSrvc := page.NewPageService(pageRepo)
 	pageCtrl := page.NewPageController(pageSrvc)
 
+	// page revision related
+	gRoute.GET("/book-pages", pageCtrl.PagesByBookID)
+
 	// revision related routes
 	revision := gRoute.Group("/revision")
 	revision.POST("", pageCtrl.NewPageRevision)
