@@ -1,0 +1,60 @@
+{
+  "kind": "collectionType",
+  "collectionName": "books",
+  "info": {
+    "name": "book",
+    "description": ""
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "note": {
+      "type": "text",
+      "private": true
+    },
+    "pages": {
+      "via": "book",
+      "collection": "page"
+    },
+    "file": {
+      "model": "file",
+      "via": "related",
+      "allowedTypes": [
+        "files"
+      ],
+      "plugin": "upload",
+      "required": true,
+      "pluginOptions": {}
+    },
+    "numberOfPages": {
+      "type": "integer",
+      "required": true
+    },
+    "authors": {
+      "via": "books",
+      "collection": "author"
+    },
+    "categories": {
+      "via": "books",
+      "collection": "category"
+    },
+    "stage": {
+      "type": "enumeration",
+      "enum": [
+        "init",
+        "rev",
+        "done"
+      ],
+      "default": "init",
+      "required": false
+    }
+  }
+}

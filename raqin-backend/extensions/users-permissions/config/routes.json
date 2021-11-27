@@ -1,0 +1,12 @@
+{
+  "routes": [
+    {
+      "method": "PUT",
+      "path": "/users/me",
+      "handler": "User.updateMe",
+      "config": {
+        "policies": []
+      }
+    }
+  ]
+}

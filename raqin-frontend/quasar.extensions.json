@@ -1,0 +1,10 @@
+{
+  "tailwindcss": {
+    "prefix": "tw-",
+    "parts": [
+      "base",
+      "components",
+      "utilities"
+    ]
+  }
+}

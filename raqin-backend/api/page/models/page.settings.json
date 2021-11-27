@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "pages",
+  "info": {
+    "name": "page",
+    "description": ""
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "text": {
+      "type": "richtext",
+      "required": true
+    },
+    "pageNumber": {
+      "type": "integer",
+      "required": true
+    },
+    "stage": {
+      "type": "enumeration",
+      "enum": [
+        "init",
+        "rev",
+        "done"
+      ],
+      "required": false,
+      "default": "init"
+    },
+    "book": {
+      "via": "pages",
+      "model": "book"
+    },
+    "user": {
+      "plugin": "users-permissions",
+      "model": "user",
+      "via": "pages"
+    }
+  }
+}

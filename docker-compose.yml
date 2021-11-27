@@ -1,0 +1,72 @@
+version: "3.1"
+
+services:
+
+  raqin-frontend:
+    build:
+      context: ./raqin-frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mariadb
+      - strapi
+      - cube
+
+  raqin-backend:
+    build:
+      context: ./raqin-backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      DATABASE_CLIENT: mysql
+      DATABASE_HOST: mariadb
+      DATABASE_PORT: 3306
+      DATABASE_NAME: raqin-db
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: password
+      DATABASE_SSL: "false"
+    volumes:
+      - raqin-backend:/app/public/uploads
+    ports:
+      - "1337:1337"
+    depends_on:
+      - mariadb
+
+  raqin-analytics:
+    build:
+      context: ./raqin-analytics
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      CUBEJS_DB_HOST: mariadb
+      CUBEJS_DB_PORT: 3306
+      CUBEJS_DB_NAME: raqin-db
+      CUBEJS_DB_USER: root
+      CUBEJS_DB_PASS: password
+      CUBEJS_DB_TYPE: mysql
+      CUBEJS_API_SECRET: 09f4996b68b49a8ee741ebe223505d2de3969eded97f544417602b15053b238af6a1378a9217b66d439a24b3fe63204c67ad0332633b4c1a8526f3d376cba33d
+      CUBEJS_EXTERNAL_DEFAULT: "true"
+      CUBEJS_SCHEDULED_REFRESH_DEFAULT: "true"
+      CUBEJS_DEV_MODE: "true"
+      CUBEJS_CACHE_AND_QUEUE_DRIVER: memory
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mariadb
+
+  mariadb:
+    image: mariadb
+    restart: always
+    volumes:
+      - rqain-db:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: raqin-db
+      MYSQL_USER: raqin-user
+      MYSQL_PASSWORD: raqin-password
+
+volumes:
+  rqain-db:
+  raqin-backend:

@@ -1,0 +1,15 @@
+{
+  "name": "raqin-analytics",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "cubejs-server"
+  },
+  "template": "docker",
+  "templateVersion": "0.28.41",
+  "devDependencies": {
+    "@cubejs-backend/mysql-driver": "^0.28.41",
+    "@cubejs-backend/server": "^0.28.41"
+  },
+  "dependencies": {}
+}
