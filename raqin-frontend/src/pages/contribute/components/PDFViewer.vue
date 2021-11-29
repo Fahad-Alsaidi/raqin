@@ -1,5 +1,12 @@
 <template>
-  <VuePdfApp theme="light" class="tw-pt-4" :key="currentPage" :page-number="currentPage" :config="config" :pdf="currentBook" />
+  <VuePdfApp
+    theme="light"
+    class="tw-pt-4"
+    :key="currentPage"
+    :page-number="currentPage"
+    :config="config"
+    :pdf="currentBook"
+  />
 </template>
 
 <script>
@@ -46,8 +53,14 @@ export default {
   mounted() {},
   computed: {
     currentBook: function() {
+      let url;
+      if (process.env.NODE_ENV == "production") {
+        url = `https://${process.env.API_URL}`;
+      } else {
+        url = `http://localhost:1337`;
+      }
       return this.pdfFile
-        ? `https://${process.env.API_URL}${this.pdfFile.file.url}`
+        ? `${url}${this.pdfFile.file.url}`
         : null;
     },
     currentPage: function() {
@@ -63,6 +76,6 @@ export default {
 }
 
 .pdfViewer {
-  background-color: rgba(108,117,125,0.3) !important;
+  background-color: rgba(108, 117, 125, 0.3) !important;
 }
 </style>
