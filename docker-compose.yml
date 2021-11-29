@@ -11,8 +11,8 @@ services:
       - "8080:8080"
     depends_on:
       - mariadb
-      - strapi
-      - cube
+      - raqin-backend
+      - raqin-analytics
 
   raqin-backend:
     build:
