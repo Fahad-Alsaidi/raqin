@@ -18,6 +18,10 @@
         type="number"
         label="رقم الصفحة"
         class="tw-w-full xs:tw-w-1/3 tw-pb-2"
+        :min="1"
+        :max="MaxPagesNo"
+        error-message="رقم الصفحة خطأ"
+        :error="!isValidPageNumber()"
         dense
       />
 
@@ -126,6 +130,7 @@ export default {
       currentUserPageID: 0,
       pageNumber: 1,
       pageText: "",
+      MaxPagesNo: 0,
     };
   },
   mounted() {
@@ -189,6 +194,7 @@ export default {
       let book = this.$store.getters["editor/getCurrentBook"];
       if (book != null && this.book == null) {
         this.book = book;
+        this.MaxPagesNo = book.numberOfPages
       }
 
       let page = this.$store.getters["editor/getCurrentPage"];
@@ -251,13 +257,18 @@ export default {
         return "-";
       }
     },
+    isValidPageNumber(){
+      if (this.pageNumber > this.MaxPagesNo || this.pageNumber < 1) {
+        return false
+      } else return true
+    }
   },
   watch: {
     book: function (val) {
       this.$emit("book", val);
     },
     pageNumber: function (newVal, oldVal) {
-      if (newVal !== oldVal) {
+      if (newVal !== oldVal && newVal > 0 && newVal < this.MaxPagesNo + 1) {
         this.checkPagesOfCurrentPageNumber(newVal);
         this.$emit("pageNumber", newVal);
       }
