@@ -12,13 +12,10 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "text": {
-      "type": "richtext",
-      "required": true
-    },
     "pageNumber": {
       "type": "integer",
-      "required": true
+      "required": true,
+      "min": 1
     },
     "stage": {
       "type": "enumeration",
@@ -38,6 +35,10 @@
       "plugin": "users-permissions",
       "model": "user",
       "via": "pages"
+    },
+    "text": {
+      "type": "text",
+      "required": true
     }
   }
 }

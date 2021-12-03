@@ -36,7 +36,8 @@
     },
     "numberOfPages": {
       "type": "integer",
-      "required": true
+      "required": true,
+      "min": 1
     },
     "authors": {
       "via": "books",
