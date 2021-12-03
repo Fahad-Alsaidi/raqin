@@ -1,16 +1,7 @@
 <template>
   <div v-if="book">
     <div
-      class="
-        q-my-md
-        tw-w-full
-        tw-flex
-        tw-flex-row
-        tw-flex-wrap
-        tw-justify-between
-        tw-justify-items-start
-        tw-content-start
-      "
+      class="q-my-md tw-w-full tw-flex tw-flex-row tw-flex-wrap tw-justify-between tw-justify-items-start tw-content-start"
     >
       <q-input
         filled
@@ -42,28 +33,10 @@
 
     <div
       v-if="pages.length > 0"
-      class="
-        tw-my-2
-        tw-w-full
-        tw-flex
-        tw-flex-row
-        tw-flex-wrap
-        tw-justify-center
-        tw-justify-items-start
-        tw-content-start
-      "
+      class="tw-my-2 tw-w-full tw-flex tw-flex-row tw-flex-wrap tw-justify-center tw-justify-items-start tw-content-start"
     >
       <div
-        class="
-          text-orange
-          tw-w-full
-          tw-flex
-          tw-flex-row
-          tw-flex-wrap
-          tw-justify-center
-          tw-items-center
-          tw-content-ceter
-        "
+        class="text-orange tw-w-full tw-flex tw-flex-row tw-flex-wrap tw-justify-center tw-items-center tw-content-ceter"
         v-if="pages.length > 0 && !userHasPage()"
       >
         <div>هناك من يعمل على هذه الصفحة</div>
@@ -76,24 +49,13 @@
       </div>
 
       <div
-        class="
-          text-green
-          tw-w-full
-          tw-flex
-          tw-flex-row
-          tw-flex-wrap
-          tw-justify-center
-          tw-items-center
-          tw-content-start
-        "
+        class="text-green tw-w-full tw-flex tw-flex-row tw-flex-wrap tw-justify-center tw-items-center tw-content-start"
         v-if="pages.length > 0 && userHasPage()"
       >
         <div>أكمل العمل على صفحتك</div>
 
         <q-icon name="check_circle" class="tw-mx-2" />
-        <q-tooltip>
-          يوجد لديك نسخة لهذه الصفحة, يمكنك إكمال العمل عليها
-        </q-tooltip>
+        <q-tooltip>يوجد لديك نسخة لهذه الصفحة, يمكنك إكمال العمل عليها</q-tooltip>
       </div>
     </div>
 
@@ -101,16 +63,11 @@
       <q-card-actions flat class="bg-primary">
         <q-btn label="حفظ" @click="updateOrCreatePage()" :loading="loading" />
         <q-space />
-        <a> {{` كتاب: ${book.name} `}} </a>
+        <a>{{` كتاب: ${book.name} `}}</a>
       </q-card-actions>
 
       <q-card-section class="tw-w-full no-padding">
-        <q-input
-          v-model="pageText"
-          class="tw-w-full bg-navbar tw-px-2"
-          rounded
-          type="textarea"
-        />
+        <q-input v-model="pageText" class="tw-w-full bg-navbar tw-px-2" rounded type="textarea" />
       </q-card-section>
     </q-card>
   </div>
@@ -131,7 +88,7 @@ export default {
       currentUserPageID: 0,
       pageNumber: 1,
       pageText: "",
-      MaxPagesNo: 0,
+      MaxPagesNo: 0
     };
   },
   mounted() {
@@ -158,18 +115,18 @@ export default {
     updatePage() {
       this.loading = true;
       let page = {
-        text: this.pageText,
+        text: this.pageText
       };
       this.$store
         .dispatch("editor/updatePage", {
           page: page,
-          pageID: this.currentUserPageID,
+          pageID: this.currentUserPageID
         })
-        .then((res) => {
+        .then(res => {
           this.loading = false;
           this.$q.notify(this.pageTextSaved);
         })
-        .catch((err) => {
+        .catch(err => {
           this.loading = false;
           console.log(err);
           this.$q.notify(this.networkError);
@@ -180,16 +137,18 @@ export default {
       let page = {
         text: this.pageText,
         pageNumber: this.pageNumber,
-        book: this.book.id,
+        book: this.book.id
       };
 
       this.$store
         .dispatch("editor/createPage", page)
-        .then((res) => {
+        .then(res => {
           this.loading = false;
+          this.pages.push(res.data);
+          this.page = res.data;
           this.$q.notify(this.pageTextSaved);
         })
-        .catch((err) => {
+        .catch(err => {
           this.loading = false;
           console.log(err);
           this.$q.notify(this.networkError);
@@ -199,7 +158,7 @@ export default {
       let book = this.$store.getters["editor/getCurrentBook"];
       if (book != null && this.book == null) {
         this.book = book;
-        this.MaxPagesNo = book.numberOfPages
+        this.MaxPagesNo = book.numberOfPages;
       }
 
       let page = this.$store.getters["editor/getCurrentPage"];
@@ -217,9 +176,7 @@ export default {
     },
     getUserOwnPageIfExist() {
       let currentUser = this.$store.getters["auth/getUser"];
-      let userOwnPage = this.pages.find(
-        (page) => page.user.id == currentUser.id
-      );
+      let userOwnPage = this.pages.find(page => page.user.id == currentUser.id);
       if (userOwnPage) {
         return userOwnPage;
       } else return null;
@@ -240,11 +197,11 @@ export default {
     checkPagesOfCurrentPageNumber(val) {
       pageAPI
         .getByPageNumberAndBookID(val, this.book.id)
-        .then((res) => {
+        .then(res => {
           this.pages = res.data;
           this.changeToUserOwnPage();
         })
-        .catch((err) => {
+        .catch(err => {
           console.log(err);
         });
     },
@@ -262,23 +219,23 @@ export default {
         return "-";
       }
     },
-    isValidPageNumber(){
+    isValidPageNumber() {
       if (this.pageNumber > this.MaxPagesNo || this.pageNumber < 1) {
-        return false
-      } else return true
+        return false;
+      } else return true;
     }
   },
   watch: {
-    book: function (val) {
+    book: function(val) {
       this.$emit("book", val);
     },
-    pageNumber: function (newVal, oldVal) {
+    pageNumber: function(newVal, oldVal) {
       if (newVal !== oldVal && newVal > 0 && newVal < this.MaxPagesNo + 1) {
         this.checkPagesOfCurrentPageNumber(newVal);
         this.$emit("pageNumber", newVal);
       }
     },
-    page: function (newPage) {
+    page: function(newPage) {
       let userPage = this.getUserOwnPageIfExist();
       if (newPage && userPage && newPage.id == userPage.id) {
         this.currentUserPageID = newPage.id;
@@ -287,8 +244,8 @@ export default {
         this.currentUserPageID = 0;
         this.pageText = newPage.text;
       }
-    },
-  },
+    }
+  }
 };
 </script>
 
