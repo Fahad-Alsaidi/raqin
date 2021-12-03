@@ -45,10 +45,12 @@ export function myProfile({commit}) {
     authAPI
     .myProfile()
     .then(res => {
-      commit('setUser', res.data.user);
-      resolve(res.data.user);
+      commit('setUser', res.data);
+      resolve(res.data);
     })
     .catch(err => {
+      commit('clearUser');
+      commit('clearToken');
       reject(err);
     });
   });
