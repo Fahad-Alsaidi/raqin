@@ -46,6 +46,7 @@
                 class="tw-w-1/2"
                 label="تسجيل"
                 @click="register()"
+                :loading="loading"
               />
             </q-card-actions>
           </q-card>
@@ -60,6 +61,7 @@ export default {
   name: "register",
   data() {
     return {
+      loading: false,
       user: {
         email: "",
         username: "",
@@ -77,12 +79,16 @@ export default {
           icon: "cloud_done"
         });
       } else {
+        this.loading = true;
         this.$store
           .dispatch("auth/register", this.user)
           .then(e => {
             this.$router.push("/home");
           })
-          .catch(err => console.log(err));
+          .catch(err => {
+            this.loading = false;
+            console.log(err);
+          });
       }
     }
   }

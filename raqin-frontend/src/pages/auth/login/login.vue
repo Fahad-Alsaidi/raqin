@@ -37,6 +37,7 @@
                 class="tw-w-1/2"
                 label="دخول"
                 @click="login()"
+                :loading="loading"
               />
             </q-card-actions>
             <q-card-section class="text-center q-pa-none">
@@ -57,6 +58,7 @@ export default {
   name: "login",
   data() {
     return {
+      loading: false,
       user: {
         identifier: "",
         password: ""
@@ -76,12 +78,16 @@ export default {
           this.$router.push("/home");
         }, 2000);
       } else {
+        this.loading = true;
         this.$store
           .dispatch("auth/login", this.user)
           .then(e => {
             this.$router.push("/home");
           })
-          .catch(err => console.log(err));
+          .catch(err => {
+            this.loading = false;
+            console.log(err);
+          });
       }
     }
   }

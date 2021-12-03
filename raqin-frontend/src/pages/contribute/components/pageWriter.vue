@@ -99,7 +99,7 @@
 
     <q-card flat bordered class="text-white">
       <q-card-actions flat class="bg-primary">
-        <q-btn label="حفظ" @click="updateOrCreatePage()" />
+        <q-btn label="حفظ" @click="updateOrCreatePage()" :loading="loading" />
         <q-space />
         <a> {{` كتاب: ${book.name} `}} </a>
       </q-card-actions>
@@ -124,6 +124,7 @@ export default {
   mixins: [notifyMixin],
   data() {
     return {
+      loading: false,
       book: null,
       page: null,
       pages: [],
@@ -155,6 +156,7 @@ export default {
       } else this.createPage();
     },
     updatePage() {
+      this.loading = true;
       let page = {
         text: this.pageText,
       };
@@ -164,15 +166,17 @@ export default {
           pageID: this.currentUserPageID,
         })
         .then((res) => {
-          console.log(res);
+          this.loading = false;
           this.$q.notify(this.pageTextSaved);
         })
         .catch((err) => {
+          this.loading = false;
           console.log(err);
           this.$q.notify(this.networkError);
         });
     },
     createPage() {
+      this.loading = true;
       let page = {
         text: this.pageText,
         pageNumber: this.pageNumber,
@@ -182,10 +186,11 @@ export default {
       this.$store
         .dispatch("editor/createPage", page)
         .then((res) => {
-          console.log(res);
+          this.loading = false;
           this.$q.notify(this.pageTextSaved);
         })
         .catch((err) => {
+          this.loading = false;
           console.log(err);
           this.$q.notify(this.networkError);
         });

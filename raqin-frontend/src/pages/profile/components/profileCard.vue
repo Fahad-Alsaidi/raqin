@@ -1,5 +1,9 @@
 <template>
-  <q-card flat bordered class="tw-w-full lg:tw-w-1/3 md:tw-w-1/2 tw-p-6 tw-border-t-2 tw-border-l-2 bg-content">
+  <q-card
+    flat
+    bordered
+    class="tw-w-full lg:tw-w-1/3 md:tw-w-1/2 tw-p-6 tw-border-t-2 tw-border-l-2 bg-content"
+  >
     <q-card-section>
       <q-input
         dense
@@ -30,7 +34,7 @@
 
       <q-space />
 
-      <q-btn color="primary" v-if="edit" @click="updateProfile()">حفظ</q-btn>
+      <q-btn color="primary" v-if="edit" :loading="loading" @click="updateProfile()">حفظ</q-btn>
     </q-card-actions>
   </q-card>
 </template>
@@ -39,6 +43,7 @@
 export default {
   data: function() {
     return {
+      loading: false,
       edit: false,
       username: "",
       email: ""
@@ -57,16 +62,21 @@ export default {
     },
     updateProfile() {
       if (this.username && this.email) {
+        this.loading = true;
         this.$store
           .dispatch("auth/updateProfile", {
             username: this.username,
             email: this.email
           })
           .then(res => {
+            this.loading = false;
             this.$q.notify("updated successfully");
             this.edit = !this.edit;
           })
-          .catch(err => this.$q.notify("update failed"));
+          .catch(err => {
+            this.loading = false;
+            this.$q.notify("update failed");
+          });
       }
     }
   }
