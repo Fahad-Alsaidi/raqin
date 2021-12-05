@@ -26,6 +26,7 @@ services:
       DATABASE_NAME: raqin-db
       DATABASE_USERNAME: root
       DATABASE_PASSWORD: password
+      ADMIN_JWT_SECRET: 09f4996b68b49a8ee741ebe223505d2de3969eded97f544417602b15053b238af6a1378a9217b66d439a24b3fe63204c67ad0332633b4c1a8526f3d376cba33d
       DATABASE_SSL: "false"
     volumes:
       - raqin-backend:/app/public/uploads
@@ -66,6 +67,12 @@ services:
       MYSQL_DATABASE: raqin-db
       MYSQL_USER: raqin-user
       MYSQL_PASSWORD: raqin-password
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 5050:8080
 
 volumes:
   rqain-db:
