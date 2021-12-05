@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { Loading, QSpinnerGears, Notify } from 'quasar'
 
 export default ({ store, Vue }) => {
 
@@ -14,21 +15,54 @@ export default ({ store, Vue }) => {
   store.commit('auth/setAxiosInstance', instance)
   Vue.prototype.$axios = instance
 
-  instance.interceptors.request.use(function (config) {
-    
-    config.baseURL= baseURL;
-  
+  // attach request interceptor
+  instance.interceptors.request.use(config => {
+
+    // show spinner before request is sent
+    Loading.show({
+      spinner: QSpinnerGears,
+    })
+
+    config.baseURL = baseURL;
+
+    // attach token to request if exits
     if (store && store.getters['auth/getToken']) {
-      config.headers = {"Authorization": `Bearer ${store.getters['auth/getToken']}`}
+      config.headers = { "Authorization": `Bearer ${store.getters['auth/getToken']}` }
     }
 
     return config
-  }, function (error) {
-    // if (error.response && error.response.status === 401) {
-    //   // not authorized, redirect to login page
-    //   router.app.$root.$emit('auth:token-expired')
-    // }
+  }, error => {
+
+    Loading.hide()
+
+    Notify.create({
+      type: 'negative',
+      color: 'negative',
+      textColor: 'white',
+      timeout: 3000,
+      position: 'bottom',
+      message: error.message || 'Oops. Something went wrong!'
+    })
     return Promise.reject(error)
+  })
+
+  // attach response interceptor
+  instance.interceptors.response.use(response => {
+    Loading.hide()
+    return response
+  }, ({ response }) => {
+    Notify.create({
+      type: 'negative',
+      color: 'negative',
+      textColor: 'white',
+      timeout: 3000,
+      position: 'bottom',
+      message: `${response.data.error}: ${response.data.message}`
+    })
+    
+    Loading.hide()
+
+    return Promise.reject(response.data)
   })
 
 }

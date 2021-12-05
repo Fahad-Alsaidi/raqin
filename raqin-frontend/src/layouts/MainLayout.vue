@@ -2,21 +2,9 @@
   <q-layout view="lHh Lpr lFf" style="direction: rtl">
     <q-header elevated>
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="drawer = !drawer"
-        />
-        <q-separator
-          dark
-          vertical
-          inset
-          style="margin-right: 0.7rem; margin-left: 0.5rem"
-        />
-        <q-toolbar-title> راقن </q-toolbar-title>
+        <q-btn flat dense round icon="menu" aria-label="Menu" @click="drawer = !drawer" />
+        <q-separator dark vertical inset style="margin-right: 0.7rem; margin-left: 0.5rem" />
+        <q-toolbar-title>راقن</q-toolbar-title>
 
         <q-separator inset dark vertical />
         <q-btn stretch flat label="الخروج" @click="logout" />
@@ -48,9 +36,7 @@
                 <q-icon :name="m.icon" />
               </q-item-section>
 
-              <q-item-section>
-                {{ m.name }}
-              </q-item-section>
+              <q-item-section>{{ m.name }}</q-item-section>
             </q-item>
           </div>
 
@@ -72,18 +58,10 @@
 
     <q-page-container class="bg-content">
       <q-page>
-        <q-scroll-area
-          :thumb-style="thumbStyle"
-          :bar-style="barStyle"
-          style="height: 100vh"
-        >
+        <q-scroll-area :thumb-style="thumbStyle" :bar-style="barStyle" style="height: 100vh">
           <router-view />
           <!-- place QPageScroller at end of page -->
-          <q-page-scroller
-            position="bottom-right"
-            :scroll-offset="150"
-            :offset="[18, 18]"
-          >
+          <q-page-scroller position="bottom-right" :scroll-offset="150" :offset="[18, 18]">
             <q-btn fab icon="keyboard_arrow_up" color="accent" />
           </q-page-scroller>
         </q-scroll-area>
@@ -108,14 +86,14 @@ export default {
           name: "الملف الشخصي",
           icon: "account_circle",
           to: "/profile"
-        },
+        }
       ],
       thumbStyle: {
         right: "4px",
         borderRadius: "5px",
         backgroundColor: "#027be3",
         width: "5px",
-        opacity: 0.75,
+        opacity: 0.75
       },
 
       barStyle: {
@@ -123,8 +101,8 @@ export default {
         borderRadius: "9px",
         backgroundColor: "#027be3",
         width: "9px",
-        opacity: 0.2,
-      },
+        opacity: 0.2
+      }
     };
   },
   methods: {
@@ -144,12 +122,14 @@ export default {
       this.$store
         .dispatch("auth/logout")
         .then(this.$router.push("/login"))
-        .catch((err) => console.log(err))
+        .catch(err => console.log(err));
     },
-    changeRoute(to){
-      this.$router.push(to)
+    changeRoute(to) {
+      if (to != this.$route.path) {
+        this.$router.push(to);
+      }
     }
-  },
+  }
 };
 </script>
 <style>

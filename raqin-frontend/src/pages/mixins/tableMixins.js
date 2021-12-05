@@ -1,14 +1,6 @@
 import { date } from 'quasar'
 
 export default {
-  data(){
-    return {
-      books: [],
-    }
-  },
-  mounted(){
-    this.getBooks();
-  },
   methods: {
     Stage: function (value) {
       switch (value) {
@@ -32,8 +24,8 @@ export default {
           console.log(err);
         })
     },
-    BookWithID: function(id){
-      let book = this.books.find(e => e.id === id);
+    BookWithID: function(books, id){
+      let book = books.find(e => e.id === id);
       return book ? book : {id: 0, name: "-"}
     }
   },

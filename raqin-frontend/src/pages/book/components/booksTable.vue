@@ -77,6 +77,7 @@ export default {
   mixins: [tableMixin],
   data() {
     return {
+      books: [],
       columns: [
         {
           name: "name",
@@ -102,6 +103,9 @@ export default {
         { name: "action", label: "", field: "action" },
       ],
     };
+  },
+  mounted(){
+    this.getBooks();
   },
   methods: {
     bookCompletion(pages, total) {

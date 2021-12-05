@@ -123,14 +123,12 @@ export default {
           pageID: this.currentUserPageID
         })
         .then(res => {
-          this.loading = false;
-          this.$q.notify(this.pageTextSaved);
+          this.$q.notify(this.showSuccess('page has been saved successfully'));
         })
         .catch(err => {
-          this.loading = false;
           console.log(err);
-          this.$q.notify(this.networkError);
-        });
+        })
+        .finally((this.loading = false));
     },
     createPage() {
       this.loading = true;
@@ -143,16 +141,14 @@ export default {
       this.$store
         .dispatch("editor/createPage", page)
         .then(res => {
-          this.loading = false;
           this.pages.push(res.data);
           this.page = res.data;
-          this.$q.notify(this.pageTextSaved);
+          this.$q.notify(this.showSuccess('page has been saved successfully'));
         })
         .catch(err => {
-          this.loading = false;
           console.log(err);
-          this.$q.notify(this.networkError);
-        });
+        })
+        .finally((this.loading = false));
     },
     getCurrentBookAndPageIfExist() {
       let book = this.$store.getters["editor/getCurrentBook"];

@@ -40,7 +40,10 @@
 </template>
 
 <script>
+import notifyMixin from "../../mixins/notifyMixin";
+
 export default {
+  mixins: [notifyMixin],
   data: function() {
     return {
       loading: false,
@@ -70,7 +73,7 @@ export default {
           })
           .then(res => {
             this.loading = false;
-            this.$q.notify("updated successfully");
+            this.$q.notify(this.showSuccess("updated successfully"));
             this.edit = !this.edit;
           })
           .catch(err => {
