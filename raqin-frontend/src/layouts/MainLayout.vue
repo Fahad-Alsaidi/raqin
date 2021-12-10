@@ -4,10 +4,22 @@
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="drawer = !drawer" />
         <q-separator dark vertical inset style="margin-right: 0.7rem; margin-left: 0.5rem" />
-        <q-toolbar-title>راقن</q-toolbar-title>
+        <q-toolbar-title>{{ $t("layout.appName") }}</q-toolbar-title>
 
+        <q-select
+        class="to-customize-button tw-border-b-2 tw-border-b-white-500 q-mx-sm"
+          v-model="lang"
+          :options="langOptions"
+          rounded
+          dense
+          borderless
+          emit-value
+          map-options
+          options-dense
+          style="min-width: 150px;"
+        />
         <q-separator inset dark vertical />
-        <q-btn stretch flat label="الخروج" @click="logout" />
+        <q-btn stretch flat :label="$t('layout.logout')" @click="logout" />
       </q-toolbar>
     </q-header>
 
@@ -78,12 +90,16 @@ export default {
       drawer: false,
       miniState: true,
       menu: [
-        { name: "الرئيسية", icon: "home", to: "/home" },
-        { name: "الكتب", icon: "menu_book", to: "/books" },
-        { name: "صفحاتي", icon: "description", to: "/pages" },
+        { name: this.$t("layout.menu.home"), icon: "home", to: "/home" },
+        { name: this.$t("layout.menu.books"), icon: "menu_book", to: "/books" },
+        {
+          name: this.$t("layout.menu.myPages"),
+          icon: "description",
+          to: "/pages"
+        },
         // { name: "أوسمتي", icon: "military_tech", to: "medals" },
         {
-          name: "الملف الشخصي",
+          name: this.$t("layout.menu.profile"),
           icon: "account_circle",
           to: "/profile"
         }
@@ -102,7 +118,12 @@ export default {
         backgroundColor: "#027be3",
         width: "9px",
         opacity: 0.2
-      }
+      },
+      lang: this.$i18n.locale,
+      langOptions: [
+        { value: "ar", label: "عربي" },
+        { value: "en-us", label: "English" }
+      ]
     };
   },
   methods: {
@@ -129,11 +150,21 @@ export default {
         this.$router.push(to);
       }
     }
+  },
+  watch: {
+    lang(lang) {
+      this.$i18n.locale = lang;
+      this.$store.commit("setting/setLocale", lang);
+      location.reload();
+    }
   }
 };
 </script>
 <style>
 body {
   overflow: hidden;
+}
+.to-customize-button .q-field__native, .q-field__marginal {
+  color: rgb(247, 245, 245);
 }
 </style>

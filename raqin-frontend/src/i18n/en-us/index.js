@@ -1,7 +1,12 @@
-// This is just an example,
-// so you can safely delete all default props below
-
 export default {
-  failed: 'Action failed',
-  success: 'Action was successful'
+  layout: {
+    appName: "raqin",
+    logout: "logout",
+    menu: {
+      home: 'Home',
+      books: 'Books',
+      myPages: 'My Pages',
+      profile: 'Profile'
+    }
+  },
 }
