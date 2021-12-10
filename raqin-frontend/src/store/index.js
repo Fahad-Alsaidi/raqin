@@ -5,7 +5,7 @@ import VuexPersist from "vuex-persist";
 
 import auth from './module-auth'
 import editor from './module-editor'
-
+import setting from './setting'
 
 const secureLocalStorage = new SecureLS({ isCompression: false, encodingType: "rc4" });
 const vuexPersist = new VuexPersist({
@@ -30,7 +30,8 @@ const Store = new Vuex.Store({
   plugins: [vuexPersist.plugin],
   modules: {
     auth,
-    editor
+    editor,
+    setting
   },
 
   // enable strict mode (adds overhead!)
