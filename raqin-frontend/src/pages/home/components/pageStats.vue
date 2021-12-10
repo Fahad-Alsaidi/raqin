@@ -31,7 +31,7 @@ export default {
           minInterval: 1
         },
         title: {
-          text: "الصفحات في كل يوم",
+          text: this.$t('homePage.pageChart.title'),
           left: "center"
         },
         tooltip: {
@@ -45,7 +45,7 @@ export default {
         },
         series: [
           {
-            name: "الصفحات",
+            name: this.$t('homePage.pageChart.seriesName'),
             type: "line",
             smooth: true,
             data: []

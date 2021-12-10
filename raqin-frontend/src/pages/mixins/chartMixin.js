@@ -53,11 +53,11 @@ export default {
         Stage(value) {
             switch (value) {
                 case "rev":
-                    return "مراجعة";
+                    return this.$t('bookStages.rev');
                 case "done":
-                    return "منتهي";
+                    return this.$t('bookStages.done');
                 default:
-                    return "مبدئي";
+                    return this.$t('bookStages.init');
             }
         },
     },

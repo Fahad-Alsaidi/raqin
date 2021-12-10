@@ -23,7 +23,7 @@ export default {
       option: {
         color: ["#716F81", "#B97A95", "#F6AE99"],
         title: {
-          text: "تصنيف الكتب بالمرحلة",
+          text: this.$t('homePage.bookChart.title'),
           left: "center"
         },
         tooltip: {
@@ -37,7 +37,7 @@ export default {
         },
         series: [
           {
-            name: "الكتب",
+            name: this.$t('homePage.bookChart.seriesName'),
             type: "pie",
             radius: "55%",
             center: ["50%", "60%"],
