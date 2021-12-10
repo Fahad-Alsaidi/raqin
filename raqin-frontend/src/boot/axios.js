@@ -51,13 +51,17 @@ export default ({ store, Vue }) => {
     Loading.hide()
     return response
   }, ({ response }) => {
+    let errMsg;
+    if (Array.isArray(response?.data?.message)) {
+      errMsg = response?.data?.error;
+    } else errMsg = `${response?.data?.error}: ${response?.data?.message}`
     Notify.create({
       type: 'negative',
       color: 'negative',
       textColor: 'white',
       timeout: 3000,
       position: 'bottom',
-      message: `${response.data.error}: ${response.data.message}`
+      message: errMsg || "something went wrong"
     })
     
     Loading.hide()
