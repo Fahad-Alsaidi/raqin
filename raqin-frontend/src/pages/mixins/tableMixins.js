@@ -2,17 +2,17 @@ import { date } from 'quasar'
 
 export default {
   methods: {
-    Stage: function (value) {
+    Stage(value) {
       switch (value) {
         case "rev":
-          return "مراجعة";
+          return this.$t('bookStages.rev');
         case "done":
-          return "منتهي";
+          return this.$t('bookStages.done');
         default:
-          return "مبدئي";
+          return this.$t('bookStages.init');
       }
     },
-    getDateFormat: function(value){
+    getDateFormat: function (value) {
       return date.formatDate(value, 'YYYY-MM-DD')
     },
     getBooks: function () {
@@ -24,9 +24,9 @@ export default {
           console.log(err);
         })
     },
-    BookWithID: function(books, id){
+    BookWithID: function (books, id) {
       let book = books.find(e => e.id === id);
-      return book ? book : {id: 0, name: "-"}
+      return book ? book : { id: 0, name: "-" }
     }
   },
 }

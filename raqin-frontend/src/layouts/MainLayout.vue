@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="lHh Lpr lFf" style="direction: rtl">
+  <q-layout :view="isArabic() ? 'lHh Lpr lFf' : 'rHh Lpr lFf'" :style="isArabic() ? 'direction: rtl' : 'direction: ltr'">
     <q-header elevated>
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="drawer = !drawer" />
@@ -7,7 +7,7 @@
         <q-toolbar-title>{{ $t("layout.appName") }}</q-toolbar-title>
 
         <q-select
-        class="to-customize-button tw-border-b-2 tw-border-b-white-500 q-mx-sm"
+          class="to-customize-button tw-border-b-2 tw-border-b-white-500 q-mx-sm"
           v-model="lang"
           :options="langOptions"
           rounded
@@ -24,7 +24,7 @@
     </q-header>
 
     <q-drawer
-      side="right"
+      :side="isArabic() ? 'right' : 'left'"
       v-model="drawer"
       show-if-above
       :mini="!drawer || miniState"
@@ -56,13 +56,16 @@
         </q-list>
       </q-scroll-area>
 
-      <div class="q-mini-drawer-hide absolute" style="top: 15px; right: 185px">
+      <div
+        class="q-mini-drawer-hide absolute"
+        :style="isArabic() ? 'top: 15px; right: 185px': 'top: 15px; left: 185px'"
+      >
         <q-btn
           dense
           round
           unelevated
           color="primary"
-          icon="chevron_right"
+          :icon="isArabic() ? 'chevron_right' : 'chevron_left'"
           @click="miniState = true"
         />
       </div>
@@ -139,6 +142,9 @@ export default {
         e.stopPropagation();
       }
     },
+    isArabic() {
+      return this.$i18n.locale == "ar";
+    },
     logout() {
       this.$store
         .dispatch("auth/logout")
@@ -164,7 +170,8 @@ export default {
 body {
   overflow: hidden;
 }
-.to-customize-button .q-field__native, .q-field__marginal {
+.to-customize-button .q-field__native,
+.q-field__marginal {
   color: rgb(247, 245, 245);
 }
 </style>

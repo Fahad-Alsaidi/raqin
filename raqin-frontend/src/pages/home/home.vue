@@ -9,7 +9,7 @@
       class="tw-flex tw-flex-col tw-h-full tw-w-full md:tw-w-1/2 tw-justify-center tw-mx-auto"
     >
       <img class src="~assets/undraw_warning_cyit.svg" alt />
-      <p class="tw-text-center tw-pb-8 tw-pb-16">لا يوجد بيانات</p>
+      <p class="tw-text-center tw-pb-8 tw-pb-16"> {{ $t('homePage.noCharts') }} </p>
     </div>
   </q-page>
 </template>
@@ -25,7 +25,7 @@ export default {
   },
   data() {
     return {
-      chartExists: true,
+      chartExists: true
     };
   },
   mounted() {
@@ -46,7 +46,7 @@ export default {
         return false;
       }
     }
-  },
+  }
 };
 </script>
 

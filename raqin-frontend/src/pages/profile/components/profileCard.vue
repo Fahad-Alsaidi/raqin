@@ -8,7 +8,7 @@
       <q-input
         dense
         outlined
-        label="الإسم"
+        :label="$t('profilePage.userName')"
         :disable="!edit"
         v-model="username"
         type="text"
@@ -17,7 +17,7 @@
       <q-input
         dense
         outlined
-        label="البريد اﻹلكتروني"
+        :label="$t('profilePage.email')"
         :disable="!edit"
         v-model="email"
         type="email"
@@ -28,13 +28,13 @@
     <q-card-actions class="tw-flex tw-flex-row">
       <q-btn color="primary" @click="edit = !edit">
         {{
-        edit ? "الغاء" : "تعديل"
+        edit ? $t('profilePage.cancel') : $t('profilePage.edit')
         }}
       </q-btn>
 
       <q-space />
 
-      <q-btn color="primary" v-if="edit" :loading="loading" @click="updateProfile()">حفظ</q-btn>
+      <q-btn color="primary" v-if="edit" :loading="loading" @click="updateProfile()">{{$t('profilePage.save')}}</q-btn>
     </q-card-actions>
   </q-card>
 </template>
